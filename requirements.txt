@@ -1,0 +1,132 @@
+anndata==0.10.9
+anyio==4.8.0
+argon2-cffi==23.1.0
+argon2-cffi-bindings==21.2.0
+array_api_compat==1.10.0
+arrow==1.3.0
+asttokens==3.0.0
+async-lru==2.0.4
+attrs==24.3.0
+babel==2.16.0
+beautifulsoup4==4.12.3
+bleach==6.2.0
+certifi @ file:///croot/certifi_1734473278428/work/certifi
+cffi @ file:///home/conda/feedstock_root/build_artifacts/cffi_1725571112467/work
+charset-normalizer==3.4.1
+comm==0.2.2
+contourpy @ file:///home/conda/feedstock_root/build_artifacts/contourpy_1727293517607/work
+cuda-python @ file:///home/conda/feedstock_root/build_artifacts/cuda-python_1734926607186/work/cuda_bindings
+cupy @ file:///home/conda/feedstock_root/build_artifacts/cupy-split_1729277445422/work
+cycler @ file:///home/conda/feedstock_root/build_artifacts/cycler_1733332471406/work
+debugpy==1.8.11
+decorator==5.1.1
+defusedxml==0.7.1
+Deprecated==1.2.15
+exceptiongroup==1.2.2
+executing==2.1.0
+fastjsonschema==2.21.1
+fastrlock @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_fastrlock_1734873416/work
+fonttools @ file:///home/conda/feedstock_root/build_artifacts/fonttools_1735335806755/work
+fqdn==1.5.1
+future==1.0.0
+h11==0.14.0
+h5py==3.12.1
+httpcore==1.0.7
+httpx==0.28.1
+idna==3.10
+importlib_metadata==8.5.0
+importlib_resources @ file:///home/conda/feedstock_root/build_artifacts/importlib_resources_1736252299705/work
+ipykernel==6.29.5
+ipython==8.18.1
+isoduration==20.11.0
+jedi==0.19.2
+Jinja2==3.1.5
+joblib==1.4.2
+json5==0.10.0
+jsonpointer==3.0.0
+jsonschema==4.23.0
+jsonschema-specifications==2024.10.1
+jupyter-events==0.11.0
+jupyter-lsp==2.2.5
+jupyter_client==8.6.3
+jupyter_core==5.7.2
+jupyter_server==2.15.0
+jupyter_server_terminals==0.5.3
+jupyterlab==4.3.4
+jupyterlab_pygments==0.3.0
+jupyterlab_server==2.27.3
+kiwisolver @ file:///home/conda/feedstock_root/build_artifacts/kiwisolver_1725459266648/work
+llvmlite @ file:///croot/llvmlite_1736366675558/work
+MarkupSafe==3.0.2
+matplotlib==3.9.4
+matplotlib-inline==0.1.7
+mistune==3.1.0
+munkres==1.1.4
+natsort==8.4.0
+nbclient==0.10.2
+nbconvert==7.16.5
+nbformat==5.10.4
+nest-asyncio==1.6.0
+networkx==3.2.1
+notebook_shim==0.2.4
+numba @ file:///home/conda/feedstock_root/build_artifacts/numba_1718888028049/work
+numpy @ file:///croot/numpy_and_numpy_base_1708638617955/work/dist/numpy-1.26.4-cp39-cp39-linux_x86_64.whl#sha256=b69ac3eb7538c5a224df429dc49031914fb977825ee007f2c77a13f7aa6cd769
+overrides==7.7.0
+packaging @ file:///home/conda/feedstock_root/build_artifacts/packaging_1733203243479/work
+pandas==2.2.3
+pandocfilters==1.5.1
+parso==0.8.4
+pexpect==4.9.0
+pillow @ file:///home/conda/feedstock_root/build_artifacts/pillow_1735929703139/work
+platformdirs==4.3.6
+prometheus_client==0.21.1
+prompt_toolkit==3.0.48
+psutil==6.1.1
+ptyprocess==0.7.0
+pure_eval==0.2.3
+pycairo==1.27.0
+pycparser @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_pycparser_1733195786/work
+Pygments==2.19.1
+PyGObject==3.50.0
+PyGSP==0.5.1
+pylibraft @ file:///opt/conda/conda-bld/work/python/pylibraft
+pyparsing @ file:///home/conda/feedstock_root/build_artifacts/pyparsing_1735698276679/work
+python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/python-dateutil_1733215673016/work
+python-json-logger==3.2.1
+pytz==2024.2
+PyYAML==6.0.2
+pyzmq==26.2.0
+referencing==0.35.1
+requests==2.32.3
+rfc3339-validator==0.1.4
+rfc3986-validator==0.1.1
+rmm @ file:///opt/conda/conda-bld/work/python/rmm
+rpds-py==0.22.3
+scikit-learn==1.6.1
+scipy @ file:///home/conda/feedstock_root/build_artifacts/scipy-split_1716470218293/work/dist/scipy-1.13.1-cp39-cp39-linux_x86_64.whl#sha256=e6696cb8683d94467891b7648e068a3970f6bc0a1b3c1aa7f9bc89458eafd2f0
+seaborn==0.13.2
+Send2Trash==1.8.3
+six @ file:///home/conda/feedstock_root/build_artifacts/six_1733380938961/work
+sniffio==1.3.1
+soupsieve==2.6
+stack-data==0.6.3
+tasklogger==1.2.0
+terminado==0.18.1
+threadpoolctl==3.5.0
+tinycss2==1.4.0
+tomli==2.2.1
+tornado==6.4.2
+traitlets==5.14.3
+types-python-dateutil==2.9.0.20241206
+typing_extensions==4.12.2
+tzdata==2024.2
+unicodedata2 @ file:///home/conda/feedstock_root/build_artifacts/unicodedata2_1736692503055/work
+uri-template==1.3.0
+urllib3==2.3.0
+wcwidth==0.2.13
+webcolors==24.11.1
+webencodings==0.5.1
+websocket-client==1.8.0
+wrapt==1.17.2
+zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1732827521216/work
+zstandard==0.23.0
