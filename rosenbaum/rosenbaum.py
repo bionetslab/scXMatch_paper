@@ -42,23 +42,23 @@ def cross_match_count(Z, matching, test_group):
 
 def rosenbaum_test(Z, matching, test_group):
     n = sum(1 for g in Z if g == test_group)
-    N = len(Z)  # Total number of samples (must be even)
-    I = N // 2
+    N = len(matching) * 2
+    I = len(matching)
     
     a1 = cross_match_count(Z, matching, test_group)
 
     p_value = 0
     for A1 in range(a1 + 1):  # For all A1 <= a1
-        if (n - A1) % 2 != 0: # Skip invalid configurations
+        if (n - A1) % 2 != 0: # A2 needs to be an integer
             continue
 
-        if (I % 2) != (((n + A1) / 2) % 2): # Skip invalid configurations
+        if (I % 2) != (((n + A1) / 2) % 2): # A0 needs to be an interger
             continue
 
-        A2 = (n - A1) / 2
+        A2 = (n - A1) / 2 
         A0 = I - (n + A1) / 2 # Remaining pairs are B-B
 
-        if A0 < 0 or A2 < 0: # Skip invalid configurations
+        if A0 < 0 or A2 < 0: # invalid
             continue  
 
         numerator = np.power(2, A1) * factorial(I)
@@ -113,7 +113,7 @@ def rosenbaum(data, group_by, test_group, reference="rest", metric="mahalanobis"
     -------
     TypeError : If the input `data` is neither an `AnnData` object nor a `pandas.DataFrame`.
     ValueError : If the input `test_group` is not in the data.
-        
+
     Notes:
     ------
     Rosenbaum's test compares how likely it is to observe a matching between the `test_group` and the `reference`
