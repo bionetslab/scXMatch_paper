@@ -11,5 +11,8 @@ pandas
 scipy
 ```
 
+If you want to perform the distance matrix calculation on a GPU, also install [cupy](https://docs.cupy.dev/en/v13.2.0/install.html#installing-cupy).
+```
+ conda install -c conda-forge cupy
+```
 
-If you want to perform the distance matrix calculation on GPU, 
