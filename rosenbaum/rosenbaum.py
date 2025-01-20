@@ -1,5 +1,5 @@
 import numpy as np
-from math import comb, factorial
+from math import comb, factorial, pow
 import networkx as nx
 import anndata as ad
 import pandas as pd
@@ -19,6 +19,7 @@ except:
 
 def match_samples(samples, metric):
     try:
+        print("using GPU to calculate distance matrix.")
         distances = cp.asnumpy(gpu_cdist(cp.array(samples), cp.array(samples), metric=metric)) 
 
     except:
@@ -28,6 +29,7 @@ def match_samples(samples, metric):
             print("using CPU to calculate distance matrix.")
         distances = cpu_cdist(samples, samples, metric=metric)
 
+    print("matching samples.")
     G = nx.from_numpy_array(distances)
     matching = nx.min_weight_matching(G)
     return matching
@@ -61,7 +63,7 @@ def rosenbaum_test(Z, matching, test_group):
         if A0 < 0 or A2 < 0: # invalid
             continue  
 
-        numerator = np.power(2, A1) * factorial(I)
+        numerator = pow(2, A1) * factorial(I)
         denominator = comb(N, n) * factorial(A0) * factorial(A1) * factorial(A2)
 
         p_value += numerator / denominator
@@ -136,7 +138,7 @@ def rosenbaum(data, group_by, test_group, reference="rest", metric="mahalanobis"
         raise TypeError("the input must be an AnnData object or a pandas DataFrame.")
 
     if test_group not in group_data.values:
-        raise ValueError("Your test group is not contained in your data.")
+        raise ValueError("the test group is not contained in your data.")
     
     if rank:
         print("computing variable-wise ranks.")
@@ -146,6 +148,7 @@ def rosenbaum(data, group_by, test_group, reference="rest", metric="mahalanobis"
         mask = (group_data == test_group) | (group_data == reference)
         group_data = group_data[mask].values
         data_matrix = data_matrix[mask, :]
+        print("filtered samples.")
 
     matching = match_samples(data_matrix, metric=metric)
     return rosenbaum_test(Z=group_data, matching=matching, test_group=test_group)
