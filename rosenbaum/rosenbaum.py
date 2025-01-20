@@ -1,6 +1,7 @@
 import numpy as np
 from math import comb, factorial, pow
-import networkx as nx
+from graph_tool.topology import max_cardinality_matching
+import graph_tool.all as gt
 import anndata as ad
 import pandas as pd
 from scipy.stats import rankdata
@@ -17,6 +18,20 @@ except:
     pass
 
 
+def extract_matching(matching_map):
+    matching_list = []
+    matched = set()  # To keep track of processed vertices
+
+    for v in matching_map.get_array().nonzero()[0]:  # Only consider vertices with matches
+        partner = matching_map[v]
+        if partner != -1 and partner not in matched:
+            matching_list.append((v, partner))
+            matched.add(v)
+            matched.add(partner)
+    
+    return matching_list
+
+
 def match_samples(samples, metric):
     try:
         print("using GPU to calculate distance matrix.")
@@ -28,14 +43,38 @@ def match_samples(samples, metric):
         else:
             print("using CPU to calculate distance matrix.")
         distances = cpu_cdist(samples, samples, metric=metric)
+    #
+    num_samples = len(samples)
+    padded = False
 
+    if num_samples % 2 != 0: # with an uneven number of samples, a minimal-distance column is added 
+        distances = np.pad(distances, [(0, 1), (0, 1)], mode='constant', constant_values=0)
+        num_samples += 1
+        padded = True
+
+    max_distance = np.max(distances)
+    distances = max_distance + 1 - distances
+    
+    print("creating distance graph.")
+    G = gt.Graph(directed=False)
+    G.add_edge_list([(i, j) for i in range(num_samples) for j in range(i+1, num_samples)])
+    
+    weight = G.new_edge_property("double")
+    for edge in G.edges():
+        i, j = int(edge.source()), int(edge.target())
+        weight[edge] = distances[i, j]
+    G.edge_properties["weight"] = weight
+    
     print("matching samples.")
-    G = nx.from_numpy_array(distances)
-    matching = nx.min_weight_matching(G)
-    return matching
+    matching = max_cardinality_matching(G, weight=weight, minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
+    matching_list = extract_matching(matching)
 
+    if padded:
+        matching_list = [p for p in matching_list if (num_samples - 1) not in p] 
+    return matching_list
 
 def cross_match_count(Z, matching, test_group):
+    print("counting cross matches")
     pairs = [(Z[i], Z[j]) for (i, j) in matching]
     filtered_pairs = [pair for pair in pairs if (pair[0] == test_group) ^ (pair[1] == test_group)] # cross-match pairs contain test group exactly once
     a1 = len(filtered_pairs)
