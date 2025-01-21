@@ -6,7 +6,9 @@ import anndata as ad
 import pandas as pd
 from scipy.stats import rankdata
 from scipy.spatial.distance import cdist as cpu_cdist
-    
+from itertools import chain
+
+
 try:
     from cupyx.scipy.spatial.distance import cdist as gpu_cdist
     import cupy as cp
@@ -34,7 +36,8 @@ def extract_matching(matching_map):
 
 def match_samples(samples, metric):
     try:
-        print("using GPU to calculate distance matrix.")
+        if GPU:
+            print("trying to use GPU to calculate distance matrix.")
         distances = cp.asnumpy(gpu_cdist(cp.array(samples), cp.array(samples), metric=metric)) 
 
     except:
@@ -68,7 +71,7 @@ def match_samples(samples, metric):
     print("matching samples.")
     matching = max_cardinality_matching(G, weight=weight, minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
     matching_list = extract_matching(matching)
-
+    
     if padded:
         matching_list = [p for p in matching_list if (num_samples - 1) not in p] 
     return matching_list
@@ -81,13 +84,7 @@ def cross_match_count(Z, matching, test_group):
     return a1
 
 
-def rosenbaum_test(Z, matching, test_group):
-    n = sum(1 for g in Z if g == test_group)
-    N = len(matching) * 2
-    I = len(matching)
-    
-    a1 = cross_match_count(Z, matching, test_group)
-
+def get_p_value(a1, n, N, I):
     p_value = 0
     for A1 in range(a1 + 1):  # For all A1 <= a1
         if (n - A1) % 2 != 0: # A2 needs to be an integer
@@ -106,8 +103,34 @@ def rosenbaum_test(Z, matching, test_group):
         denominator = comb(N, n) * factorial(A0) * factorial(A1) * factorial(A2)
 
         p_value += numerator / denominator
+    return p_value
+    
+        
+def get_z_score(a1, n, N):
+    m = N - n
+    E = n * m / (N - 1) # Eq. 3 in Rosenbaum paper
+    var = 2 * n * (n - 1) * m * (m - 1) / ((N - 3) * (N - 1)**2)
+    z = (a1 - E) / np.sqrt(var)
+    return z
 
-    return p_value, a1
+
+def get_relative_support(N, Z):
+    max_support = len(Z) - (len(Z) % 2)
+    return N / max_support
+    
+
+def rosenbaum_test(Z, matching, test_group):
+    used_elements = list(chain.from_iterable(matching))
+    n = sum(1 for el in used_elements if Z[el] == test_group)
+    N = len(matching) * 2
+    I = len(matching)
+
+    a1 = cross_match_count(Z, matching, test_group)
+    
+    p_value = get_p_value(a1, n, N, I)
+    z_score = get_z_score(a1, n, N)
+    relative_support = get_relative_support(N, Z)
+    return p_value, z_score, relative_support
 
 
 def rosenbaum(data, group_by, test_group, reference="rest", metric="mahalanobis", rank=True):
