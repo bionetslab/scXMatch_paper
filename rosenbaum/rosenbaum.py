@@ -1,12 +1,16 @@
 import numpy as np
-from math import comb, factorial, pow
+from math import comb, factorial, pow, log, exp 
 from graph_tool.topology import max_cardinality_matching
 import graph_tool.all as gt
 import anndata as ad
 import pandas as pd
+
 from scipy.stats import rankdata
 from scipy.spatial.distance import cdist as cpu_cdist
+from scipy.sparse import csr_matrix
+
 from itertools import chain
+import scanpy as sc
 
 
 try:
@@ -34,7 +38,6 @@ def extract_matching(matching_map):
     return matching_list
 
 
-
 def calculate_distances(samples, metric):
     try:
         if GPU:
@@ -49,16 +52,14 @@ def calculate_distances(samples, metric):
         distances = cpu_cdist(samples, samples, metric=metric)
     #
     num_samples = len(samples)
-    padded = False
 
     if num_samples % 2 != 0: # with an uneven number of samples, a minimal-distance column is added 
         distances = np.pad(distances, [(0, 1), (0, 1)], mode='constant', constant_values=0)
         num_samples += 1
-        padded = True
 
     max_distance = np.max(distances)
     distances = max_distance + 1 - distances
-    return distances, padded
+    return distances
 
 
 def construct_graph_from_distances(distances):
@@ -68,32 +69,59 @@ def construct_graph_from_distances(distances):
     G = gt.Graph(directed=False)
     G.add_edge_list([(i, j) for i in range(num_samples) for j in range(i+1, num_samples)])
     
-    weight = G.new_edge_property("double")
+    weights = G.new_edge_property("double")
     for edge in G.edges():
         i, j = int(edge.source()), int(edge.target())
-        weight[edge] = distances[i, j]
-    G.edge_properties["weight"] = weight
-    return G
-        
-        
-def match_samples(samples, metric):
-    print("matching samples.")
-    distances, padded = calculate_distances(samples, metric)
-    G = construct_graph_from_distances(distances)
-    matching = max_cardinality_matching(G, weight=weight, minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
-    matching_list = extract_matching(matching)
+        weights[edge] = distances[i, j]
+    G.edge_properties["weight"] = weights
+    return G, weights
+
+
+def construct_graph_via_kNN(adata, metric, k):
+    print("creating distance graph with kNN.")
+    sc.pp.neighbors(adata, n_neighbors=k, metric=metric)
+    connectivities = adata.obsp['connectivities']
     
-    if padded:
-        matching_list = [p for p in matching_list if (num_samples - 1) not in p] 
+    if not isinstance(connectivities, csr_matrix):
+        connectivities = csr_matrix(connectivities)
+
+    G = gt.Graph(directed=False)
+    num_nodes = connectivities.shape[0]
+    G.add_vertex(num_nodes)
+
+    weights = G.new_edge_property("float") 
+
+    rows, cols = connectivities.nonzero()
+    for row, col in zip(rows, cols):
+        edge = G.add_edge(row, col)  
+        weights[edge] = connectivities[row, col]
+
+    G.edge_properties["weight"] = weights
+    return G, weights
+
+            
+def match_samples(adata, metric, k):
+    print("matching samples.")
+    num_samples = len(adata)
+    if k:
+        G, weights = construct_graph_via_kNN(adata, metric, k)
+    else:
+        distances = calculate_distances(adata.X, metric)
+        G, weights = construct_graph_from_distances(distances)
+        
+    matching = max_cardinality_matching(G, weight=weights, minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
+    matching_list = extract_matching(matching)
+    matching_list = [p for p in matching_list if ((p[0] < num_samples) and (p[1] < num_samples))] # TODO: check if this fully filters invalid matches!!!
     return matching_list
 
 
 def cross_match_count(Z, matching, test_group):
     print("counting cross matches")
-    pairs = [(Z[i], Z[j]) for (i, j) in matching]
+    pairs = [(Z.iloc[i], Z.iloc[j]) for (i, j) in matching]
     filtered_pairs = [pair for pair in pairs if (pair[0] == test_group) ^ (pair[1] == test_group)] # cross-match pairs contain test group exactly once
     a1 = len(filtered_pairs)
     return a1
+
 
 
 def get_p_value(a1, n, N, I):
@@ -102,7 +130,7 @@ def get_p_value(a1, n, N, I):
         if (n - A1) % 2 != 0: # A2 needs to be an integer
             continue
 
-        if (I % 2) != (((n + A1) / 2) % 2): # A0 needs to be an interger
+        if (I % 2) != (((n + A1) / 2) % 2): # A0 needs to be an integer
             continue
 
         A2 = (n - A1) / 2 
@@ -111,10 +139,11 @@ def get_p_value(a1, n, N, I):
         if A0 < 0 or A2 < 0: # invalid
             continue  
 
-        numerator = pow(2, A1) * factorial(I)
-        denominator = comb(N, n) * factorial(A0) * factorial(A1) * factorial(A2)
-
-        p_value += numerator / denominator
+        log_numerator = A1 * log(2) + log(factorial(I))
+        log_denominator = log(comb(N, n)) + log(factorial(A0)) + log(factorial(A1)) + log(factorial(A2))
+        
+        p_value += exp(log_numerator - log_denominator)
+    
     return p_value
     
         
@@ -133,7 +162,7 @@ def get_relative_support(N, Z):
 
 def rosenbaum_test(Z, matching, test_group):
     used_elements = list(chain.from_iterable(matching))
-    n = sum(1 for el in used_elements if Z[el] == test_group)
+    n = sum(1 for el in used_elements if Z.iloc[el] == test_group)
     N = len(matching) * 2
     I = len(matching)
 
@@ -145,7 +174,7 @@ def rosenbaum_test(Z, matching, test_group):
     return p_value, z_score, relative_support
 
 
-def rosenbaum(data, group_by, test_group, reference="rest", metric="mahalanobis", rank=True):
+def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis", rank=False, k=None):
     """
     Perform Rosenbaum's matching-based test for checking the association between two groups 
     using a distance-based matching approach.
@@ -200,29 +229,22 @@ def rosenbaum(data, group_by, test_group, reference="rest", metric="mahalanobis"
     distance metric. The resulting matching is then used in the `rosenbaum_test` to calculate the p-value.
     """
 
-    if isinstance(data, ad.AnnData):
-        data_matrix = data.X
-        group_data = data.obs[group_by]
-
-    elif isinstance(data, pd.DataFrame):
-        group_data = data[group_by]
-        data_matrix = data.drop(columns=[group_by]).values
-
-    else:
+    if not isinstance(adata, ad.AnnData):
         raise TypeError("the input must be an AnnData object or a pandas DataFrame.")
 
-    if test_group not in group_data.values:
+    if test_group not in adata.obs[group_by].values:
         raise ValueError("the test group is not contained in your data.")
     
     if rank:
         print("computing variable-wise ranks.")
-        data_matrix = np.apply_along_axis(rankdata, axis=0, arr=data_matrix)
+        adata.X = np.apply_along_axis(rankdata, axis=0, arr=adata.X)
 
     if reference != "rest":
-        mask = (group_data == test_group) | (group_data == reference)
-        group_data = group_data[mask].values
-        data_matrix = data_matrix[mask, :]
+        mask = (adata.obs[group_by].values == test_group) | (adata.obs[group_by].values == reference)
+        group_data = adata.obs[group_by]
+        adata = ad.AnnData(adata.X[mask, :])
+        adata.obs[group_by] = group_data[mask].values
         print("filtered samples.")
 
-    matching = match_samples(data_matrix, metric=metric)
-    return rosenbaum_test(Z=group_data, matching=matching, test_group=test_group)
+    matching = match_samples(adata, metric=metric, k=k)
+    return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group=test_group)
