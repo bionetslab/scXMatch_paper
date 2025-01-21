@@ -34,7 +34,8 @@ def extract_matching(matching_map):
     return matching_list
 
 
-def match_samples(samples, metric):
+
+def calculate_distances(samples, metric):
     try:
         if GPU:
             print("trying to use GPU to calculate distance matrix.")
@@ -57,8 +58,13 @@ def match_samples(samples, metric):
 
     max_distance = np.max(distances)
     distances = max_distance + 1 - distances
-    
+    return distances, padded
+
+
+def construct_graph_from_distances(distances):
+    num_samples = distances.shape[0]
     print("creating distance graph.")
+
     G = gt.Graph(directed=False)
     G.add_edge_list([(i, j) for i in range(num_samples) for j in range(i+1, num_samples)])
     
@@ -67,14 +73,20 @@ def match_samples(samples, metric):
         i, j = int(edge.source()), int(edge.target())
         weight[edge] = distances[i, j]
     G.edge_properties["weight"] = weight
-    
+    return G
+        
+        
+def match_samples(samples, metric):
     print("matching samples.")
+    distances, padded = calculate_distances(samples, metric)
+    G = construct_graph_from_distances(distances)
     matching = max_cardinality_matching(G, weight=weight, minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
     matching_list = extract_matching(matching)
     
     if padded:
         matching_list = [p for p in matching_list if (num_samples - 1) not in p] 
     return matching_list
+
 
 def cross_match_count(Z, matching, test_group):
     print("counting cross matches")
