@@ -71,22 +71,21 @@ def cross_match_count(Z, matching, test_group):
 def get_p_value(a1, n, N, I):
     p_value = 0
     for A1 in range(a1 + 1):  # For all A1 <= a1
-        if (n - A1) % 2 != 0: # A2 needs to be an integer
-            continue
-
-        if (I % 2) != (((n + A1) / 2) % 2): # A0 needs to be an interger
-            continue
-
         A2 = (n - A1) / 2 
-        A0 = I - (n + A1) / 2 # Remaining pairs are B-B
+        A0 = I - (n + A1) / 2 
 
+        if int(A0) != A0:
+            continue
+        if int(A2) != A2:
+            continue 
         if A0 < 0 or A2 < 0: # invalid
             continue  
 
+        #print("accepted")
         numerator = pow(2, A1) * factorial(I)
         denominator = comb(N, n) * factorial(A0) * factorial(A1) * factorial(A2)
-
         p_value += numerator / denominator
+
     return p_value
     
         
