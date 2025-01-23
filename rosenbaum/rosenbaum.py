@@ -63,7 +63,7 @@ def match_samples(samples, metric):
 def cross_match_count(Z, matching, test_group):
     print("counting cross matches")
     pairs = [(Z[i], Z[j]) for (i, j) in matching]
-    filtered_pairs = [pair for pair in pairs if (pair[0] == test_group) ^ (pair[1] == test_group)] # cross-match pairs contain test group exactly once
+    filtered_pairs = [pair for pair in pairs if (pair[0] == test_group) ^ (pair[1] == test_group)] # cross-match pairs contain test group exactly once -> XOR ^
     a1 = len(filtered_pairs)
     return a1
 
