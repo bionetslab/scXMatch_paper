@@ -1,18 +1,10 @@
 import numpy as np
-from math import comb, factorial, pow, log, exp 
-from graph_tool.topology import max_cardinality_matching
-import graph_tool.all as gt
-import networkx as nx
+from math import comb, factorial, pow
 import anndata as ad
-import pandas as pd
-from tqdm import tqdm
 from scipy.stats import rankdata
-from scipy.spatial.distance import cdist as cpu_cdist
-from scipy.sparse import csr_matrix
-
 from itertools import chain
-import scanpy as sc
-
+from .matching import *
+from .matching_nx import *
 
 try:
     from cupyx.scipy.spatial.distance import cdist as gpu_cdist
@@ -33,31 +25,28 @@ def cross_match_count(Z, matching, test_group):
     return a1
 
 
-
 def get_p_value(a1, n, N, I):
     p_value = 0
     for A1 in range(a1 + 1):  # For all A1 <= a1
-        if (n - A1) % 2 != 0: # A2 needs to be an integer
-            continue
-
-        if (I % 2) != (((n + A1) / 2) % 2): # A0 needs to be an integer
-            continue
-
         A2 = (n - A1) / 2 
-        A0 = I - (n + A1) / 2 # Remaining pairs are B-B
+        A0 = I - (n + A1) / 2 
 
+        if int(A0) != A0:
+            continue
+        if int(A2) != A2:
+            continue 
         if A0 < 0 or A2 < 0: # invalid
             continue  
 
-        log_numerator = A1 * log(2) + log(factorial(I))
-        log_denominator = log(comb(N, n)) + log(factorial(A0)) + log(factorial(A1)) + log(factorial(A2))
-        
-        p_value += exp(log_numerator - log_denominator)
-    
-    print("found", A1, "crossmatches and", A0, "+", A2, "iso-matches")
+        #print("accepted")
+        numerator = pow(2, A1) * factorial(I)
+        denominator = comb(N, n) * factorial(A0) * factorial(A1) * factorial(A2)
+        p_value += numerator / denominator
+
     return p_value
-    
         
+
+
 def get_z_score(a1, n, N):
     m = N - n
     E = n * m / (N - 1) # Eq. 3 in Rosenbaum paper
@@ -85,7 +74,7 @@ def rosenbaum_test(Z, matching, test_group):
     return p_value, z_score, relative_support
 
 
-def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis", rank=False, k=None, balance=False):
+def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis", rank=False, k=None, nx=False):
     """
     Perform Rosenbaum's matching-based test for checking the association between two groups 
     using a distance-based matching approach.
@@ -153,44 +142,30 @@ def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis
     if reference != "rest":
         print("Original group counts:")
         print(adata.obs[group_by].value_counts())
-
-        # Create masks for the two groups
-        reference_mask = adata.obs[group_by] == reference
-        test_mask = adata.obs[group_by] == test_group
-
-        # TODO only when balance=True
-        # Get group sizes
-        reference_count = reference_mask.sum()
-        test_count = test_mask.sum()
-
-        # Determine the smaller group size
-        min_size = min(reference_count, test_count)
-
-        if min_size > 0:
-            # Downsample both groups to the same size
-            sampled_reference = adata.obs[reference_mask].sample(n=min_size, random_state=42).index
-            sampled_test = adata.obs[test_mask].sample(n=min_size, random_state=42).index
-
-            # Combine sampled indices
-            sampled_indices = sampled_reference.union(sampled_test)
-
-            # Subset the AnnData object
-            adata = adata[sampled_indices, :]
-
-            print("Filtered and downsampled samples:")
-            print(adata.obs[group_by].value_counts())
-        else:
-            print("One of the groups has no samples available after filtering.")
+        adata = adata[adata.obs[group_by].isin([test_group, reference]), :]
+        print("Filtered and downsampled samples:")
+        print(adata.obs[group_by].value_counts())
 
     
     print("matching samples.")
-    num_samples = len(adata)
-    if k:
-        G, weights = construct_graph_via_kNN(adata, metric, k)
-    else:
-        distances = calculate_distances(adata.X.toarray(), metric)
-        G, weights = construct_graph_from_distances(distances)
-    
-    matching = match(G, weights, num_samples)
+    if nx: # NX based computation
+        if k:
+            G = construct_graph_via_kNN_nx(adata, metric, k)
+        else:
+            distances = calculate_distances_nx(adata.X, metric)
+            G = construct_graph_from_distances_nx(distances)
+        matching = match_nx(G)
+        matching = [sorted(m) for m in matching]
 
-    return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group=test_group)
+    else: # graphtool based computation
+        num_samples = len(adata)
+        if k:
+            G, weights = construct_graph_via_kNN(adata, metric, k)
+        else:
+            distances = calculate_distances(adata.X.toarray(), metric)
+            G, weights = construct_graph_from_distances(distances)
+        matching = match(G, weights, num_samples)
+        matching = [sorted(m) for m in matching]
+
+
+    return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group=test_group), matching, G
