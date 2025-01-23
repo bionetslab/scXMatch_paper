@@ -1,7 +1,6 @@
 import numpy as np
 from graph_tool.topology import max_cardinality_matching
 import graph_tool.all as gt
-import networkx as nx
 from tqdm import tqdm
 from scipy.spatial.distance import cdist as cpu_cdist
 from scipy.sparse import csr_matrix
@@ -14,11 +13,34 @@ try:
     GPU = True
     print("found cupy installation, will try use the GPU to calculate the distance matrix.")
 except:
+    from scipy.spatial.distance import cdist as cpu_cdist
     GPU = False
     print("will use the CPU to calculate the distance matrix.")
     pass
 
 
+def calculate_distances(samples, metric):
+    try:
+        if GPU:
+            print("trying to use GPU to calculate distance matrix.")
+        distances = cp.asnumpy(gpu_cdist(cp.array(samples), cp.array(samples), metric=metric)) 
+
+    except:
+        if GPU:
+            print("using CPU to calculate distance matrix due to chosen metric.")
+        else:
+            print("using CPU to calculate distance matrix.")
+        distances = cpu_cdist(samples, samples, metric=metric)
+
+    num_samples = len(samples)
+
+    if num_samples % 2 != 0: # with an uneven number of samples, a minimal-distance column is added 
+        distances = np.pad(distances, [(0, 1), (0, 1)], mode='constant', constant_values=0)
+        num_samples += 1
+
+    max_distance = np.max(distances)
+    distances = max_distance + 1 - distances
+    return distances
 
 
 def extract_matching(matching_map):
@@ -64,10 +86,11 @@ def construct_graph_via_kNN(adata, metric, k):
     print("extracting connectivities.")
     connectivities = adata.obsp['connectivities']
     del adata
-    print(connectivities.shape[0])
+    print(connectivities.toarray())
 
     if not isinstance(connectivities, csr_matrix):
         connectivities = csr_matrix(connectivities)
+    max_dist = np.max(connectivities)
 
     print("assembling edges")
     G = gt.Graph(directed=False)
@@ -80,7 +103,8 @@ def construct_graph_via_kNN(adata, metric, k):
     rows, cols = connectivities.nonzero()
     for row, col in tqdm(zip(rows, cols)):
         edge = G.add_edge(row, col)  
-        weights[edge] = connectivities[row, col]
+        print(row, col, connectivities[row, col])
+        weights[edge] = max_dist + 1 - connectivities[row, col]
 
     G.edge_properties["weight"] = weights
     del connectivities
