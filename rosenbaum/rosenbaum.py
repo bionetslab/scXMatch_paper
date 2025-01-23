@@ -4,7 +4,7 @@ from graph_tool.topology import max_cardinality_matching
 import graph_tool.all as gt
 import anndata as ad
 import pandas as pd
-
+from tqdm import tqdm
 from scipy.stats import rankdata
 from scipy.spatial.distance import cdist as cpu_cdist
 from scipy.sparse import csr_matrix
@@ -78,25 +78,36 @@ def construct_graph_from_distances(distances):
 
 
 def construct_graph_via_kNN(adata, metric, k):
-    print("creating distance graph with kNN.")
+    # is it better to calculate the distances first, and then calculate the NNs on that
+    # or to calculate the NNs and then calculate the distances only for these 
+    print("calculating PCA and kNN graph.")
+
+    sc.pp.pca(adata)
     sc.pp.neighbors(adata, n_neighbors=k, metric=metric)
+
+    print("extracting connectivities.")
     connectivities = adata.obsp['connectivities']
-    
+    del adata
+    print(connectivities.shape[0])
+
     if not isinstance(connectivities, csr_matrix):
         connectivities = csr_matrix(connectivities)
 
+    print("assembling edges")
     G = gt.Graph(directed=False)
     num_nodes = connectivities.shape[0]
+
     G.add_vertex(num_nodes)
 
     weights = G.new_edge_property("float") 
 
     rows, cols = connectivities.nonzero()
-    for row, col in zip(rows, cols):
+    for row, col in tqdm(zip(rows, cols)):
         edge = G.add_edge(row, col)  
         weights[edge] = connectivities[row, col]
 
     G.edge_properties["weight"] = weights
+    del connectivities
     return G, weights
 
             
@@ -106,11 +117,12 @@ def match_samples(adata, metric, k):
     if k:
         G, weights = construct_graph_via_kNN(adata, metric, k)
     else:
-        distances = calculate_distances(adata.X, metric)
+        distances = calculate_distances(adata.X.toarray(), metric)
         G, weights = construct_graph_from_distances(distances)
         
     matching = max_cardinality_matching(G, weight=weights, minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
     matching_list = extract_matching(matching)
+    del G
     matching_list = [p for p in matching_list if ((p[0] < num_samples) and (p[1] < num_samples))] # TODO: check if this fully filters invalid matches!!!
     return matching_list
 
@@ -144,6 +156,7 @@ def get_p_value(a1, n, N, I):
         
         p_value += exp(log_numerator - log_denominator)
     
+    print("found", A1, "crossmatches and", A0, "+", A2, "iso-matches")
     return p_value
     
         
@@ -174,7 +187,7 @@ def rosenbaum_test(Z, matching, test_group):
     return p_value, z_score, relative_support
 
 
-def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis", rank=False, k=None):
+def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis", rank=False, k=None, balance=False):
     """
     Perform Rosenbaum's matching-based test for checking the association between two groups 
     using a distance-based matching approach.
@@ -240,11 +253,36 @@ def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis
         adata.X = np.apply_along_axis(rankdata, axis=0, arr=adata.X)
 
     if reference != "rest":
-        mask = (adata.obs[group_by].values == test_group) | (adata.obs[group_by].values == reference)
-        group_data = adata.obs[group_by]
-        adata = ad.AnnData(adata.X[mask, :])
-        adata.obs[group_by] = group_data[mask].values
-        print("filtered samples.")
+        print("Original group counts:")
+        print(adata.obs[group_by].value_counts())
+
+        # Create masks for the two groups
+        reference_mask = adata.obs[group_by] == reference
+        test_mask = adata.obs[group_by] == test_group
+
+        # TODO only when balance=True
+        # Get group sizes
+        reference_count = reference_mask.sum()
+        test_count = test_mask.sum()
+
+        # Determine the smaller group size
+        min_size = min(reference_count, test_count)
+
+        if min_size > 0:
+            # Downsample both groups to the same size
+            sampled_reference = adata.obs[reference_mask].sample(n=min_size, random_state=42).index
+            sampled_test = adata.obs[test_mask].sample(n=min_size, random_state=42).index
+
+            # Combine sampled indices
+            sampled_indices = sampled_reference.union(sampled_test)
+
+            # Subset the AnnData object
+            adata = adata[sampled_indices, :]
+
+            print("Filtered and downsampled samples:")
+            print(adata.obs[group_by].value_counts())
+        else:
+            print("One of the groups has no samples available after filtering.")
 
     matching = match_samples(adata, metric=metric, k=k)
     return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group=test_group)
