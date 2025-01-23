@@ -11,9 +11,6 @@ Within the environment, install the required packages using pip and conda:
 ```
 pip install -r requirements.txt
 ```
-```
-conda install -c conda-forge graph-tool
-```
 If you want to perform the distance matrix calculation on a GPU, also install [pylibraft](https://anaconda.org/rapidsai/pylibraft) and [cupy](https://docs.cupy.dev/en/v13.2.0/install.html#installing-cupy). 
 This step is not helpful when using mahalanobis distance, because it will fallback to cpu distance matrix calulcation anyways.
 ```
