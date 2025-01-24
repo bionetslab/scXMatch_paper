@@ -75,39 +75,32 @@ def construct_graph_from_distances(distances):
 
 
 
-def construct_graph_via_kNN(adata, metric, k):
+def construct_graph_via_kNN(adata):
     # is it better to calculate the distances first, and then calculate the NNs on that
     # or to calculate the NNs and then calculate the distances only for these 
-    print("calculating PCA and kNN graph.")
-
-    sc.pp.pca(adata)
-    sc.pp.neighbors(adata, n_neighbors=k, metric=metric)
-
-    print("extracting connectivities.")
-    connectivities = adata.obsp['connectivities']
+    #print("extracting connectivities.")
+    distances = adata.obsp['distances']
     del adata
-    print(connectivities.toarray())
 
-    if not isinstance(connectivities, csr_matrix):
-        connectivities = csr_matrix(connectivities)
-    max_dist = np.max(connectivities)
+    if not isinstance(distances, csr_matrix):
+        distances = csr_matrix(distances)
+    max_dist = np.max(distances)
 
-    print("assembling edges")
+    #print("assembling edges")
     G = gt.Graph(directed=False)
-    num_nodes = connectivities.shape[0]
+    num_nodes = distances.shape[0]
 
     G.add_vertex(num_nodes)
 
     weights = G.new_edge_property("float") 
 
-    rows, cols = connectivities.nonzero()
-    for row, col in tqdm(zip(rows, cols)):
+    rows, cols = distances.nonzero()
+    for row, col in zip(rows, cols):
         edge = G.add_edge(row, col)  
-        print(row, col, connectivities[row, col])
-        weights[edge] = max_dist + 1 - connectivities[row, col]
+        weights[edge] = max_dist + 1 - distances[row, col]
 
     G.edge_properties["weight"] = weights
-    del connectivities
+    del distances
     return G, weights
 
 

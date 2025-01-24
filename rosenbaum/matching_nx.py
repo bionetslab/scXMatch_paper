@@ -37,22 +37,17 @@ def construct_graph_from_distances_nx(distances):
     return G
 
 
-def construct_graph_via_kNN_nx(adata, metric, k):
-    print("calculating PCA and kNN graph.")
-    sc.pp.pca(adata)
-    sc.pp.neighbors(adata, n_neighbors=k, metric=metric)
-
-    print("extracting connectivities.")
-    connectivities = adata.obsp['connectivities']
+def construct_graph_via_kNN_nx(adata):
+    #print("extracting connectivities.")
+    distances = adata.obsp['distances']
     del adata
-    print(connectivities.toarray())
 
-    if not isinstance(connectivities, csr_matrix):
-        connectivities = csr_matrix(connectivities)
+    if not isinstance(distances, csr_matrix):
+        distances = csr_matrix(distances)
 
-    print("assembling edges")
-    G = nx.from_scipy_sparse_array(connectivities)
-    del connectivities
+    #print("assembling edges")
+    G = nx.from_scipy_sparse_array(distances)
+    del distances
     return G
 
 
