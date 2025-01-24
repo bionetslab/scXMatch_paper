@@ -1,21 +1,10 @@
 import numpy as np
-from math import comb, factorial, pow
+from math import comb, factorial, pow, log, exp
 import anndata as ad
 from scipy.stats import rankdata
 from itertools import chain
-from .matching import *
-from .matching_nx import *
-
-try:
-    from cupyx.scipy.spatial.distance import cdist as gpu_cdist
-    import cupy as cp
-    GPU = True
-    print("found cupy installation, will try use the GPU to calculate the distance matrix.")
-except:
-    GPU = False
-    print("will use the CPU to calculate the distance matrix.")
-    pass
-
+from matching import *
+from matching_nx import *
 
 def cross_match_count(Z, matching, test_group):
     print("counting cross matches")
@@ -35,13 +24,12 @@ def get_p_value(a1, n, N, I):
             continue
         if int(A2) != A2:
             continue 
-        if A0 < 0 or A2 < 0: # invalid
+        if A0 < 0 or A2 < 0:
             continue  
 
-        #print("accepted")
-        numerator = pow(2, A1) * factorial(I)
-        denominator = comb(N, n) * factorial(A0) * factorial(A1) * factorial(A2)
-        p_value += numerator / denominator
+        log_numerator = A1 * log(2) + log(factorial(I))
+        log_denominator = log(comb(N, n)) + log(factorial(A0)) + log(factorial(A1)) + log(factorial(A2))
+        p_value += exp(log_numerator - log_denominator)
 
     return p_value
         
@@ -72,6 +60,12 @@ def rosenbaum_test(Z, matching, test_group):
     z_score = get_z_score(a1, n, N)
     relative_support = get_relative_support(N, Z)
     return p_value, z_score, relative_support
+
+
+def kNN(adata, k, metric):
+    print("calculating PCA and kNN graph.")
+    sc.pp.pca(adata)
+    sc.pp.neighbors(adata, n_neighbors=k, metric=metric)
 
 
 def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis", rank=False, k=None, nx=False):
@@ -141,16 +135,17 @@ def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis
 
     if reference != "rest":
         print("Original group counts:")
-        print(adata.obs[group_by].value_counts())
         adata = adata[adata.obs[group_by].isin([test_group, reference]), :]
         print("Filtered and downsampled samples:")
         print(adata.obs[group_by].value_counts())
 
+
+    kNN(adata, k, metric)
     
     print("matching samples.")
     if nx: # NX based computation
         if k:
-            G = construct_graph_via_kNN_nx(adata, metric, k)
+            G = construct_graph_via_kNN_nx(adata)
         else:
             distances = calculate_distances_nx(adata.X, metric)
             G = construct_graph_from_distances_nx(distances)
@@ -160,7 +155,7 @@ def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis
     else: # graphtool based computation
         num_samples = len(adata)
         if k:
-            G, weights = construct_graph_via_kNN(adata, metric, k)
+            G, weights = construct_graph_via_kNN(adata)
         else:
             distances = calculate_distances(adata.X.toarray(), metric)
             G, weights = construct_graph_from_distances(distances)
