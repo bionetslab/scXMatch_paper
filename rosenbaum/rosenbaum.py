@@ -3,8 +3,8 @@ from math import comb, factorial, pow, log, exp
 import anndata as ad
 from scipy.stats import rankdata
 from itertools import chain
-from .matching import *
-from .matching_nx import * 
+from matching import *
+from matching_nx import * 
 
 
 def cross_match_count(Z, matching, test_group):
@@ -65,6 +65,7 @@ def rosenbaum_test(Z, matching, test_group):
 
 def kNN(adata, k, metric):
     print("calculating PCA and kNN graph.")
+    sc.pp.pca(adata)
     sc.pp.neighbors(adata, n_neighbors=k, metric=metric)
 
 

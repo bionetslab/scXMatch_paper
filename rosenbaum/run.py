@@ -29,7 +29,7 @@ def scanpy_setup(adata):
 
 
 def run_mcfarland(path="/data/bionets/datasets/scrnaseq_ji/mcfarland.hdf5"):
-    nx = True
+    nx = False
     if nx:
         logging.basicConfig(
             filename="../evaluation_results/mcfarland_nx_log.txt",
@@ -52,7 +52,7 @@ def run_mcfarland(path="/data/bionets/datasets/scrnaseq_ji/mcfarland.hdf5"):
     logging.info(f"test_group; k; p; z; s; t")
     print(adata.obs["perturbation"].value_counts())
     
-    for k in [None]: #[2, 5, 10, 15, None]:
+    for k in [5]:
         for i, test_group in enumerate([g6, g24]):
             start = time.time()
             p, z, s = rosenbaum(adata, group_by="perturbation", reference=["control"], test_group=test_group, rank=False, metric="sqeuclidean", k=k, nx=nx)    
@@ -61,7 +61,7 @@ def run_mcfarland(path="/data/bionets/datasets/scrnaseq_ji/mcfarland.hdf5"):
 
 
 def run_norman(path="/data/bionets/datasets/scrnaseq_ji/norman.hdf5"):
-    nx = True
+    nx = False
     if nx:
         logging.basicConfig(
             filename="../evaluation_results/norman_nx_log.txt",
@@ -89,7 +89,7 @@ def run_norman(path="/data/bionets/datasets/scrnaseq_ji/norman.hdf5"):
     logging.info(f"test_group; k; p; z; s; t")
     print(adata.obs["perturbation"].value_counts())
     
-    for k in [2, 5, 10, 15]:
+    for k in [2, 5]:
         for i, test_group in enumerate(["control", "1", "2"]):
             for j, reference in enumerate(["control", "1", "2"]):
                 if j <= i:
@@ -101,4 +101,4 @@ def run_norman(path="/data/bionets/datasets/scrnaseq_ji/norman.hdf5"):
 
 
 if __name__ == "__main__":
-    run_norman()
+    run_mcfarland()
