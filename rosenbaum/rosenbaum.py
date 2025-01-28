@@ -3,11 +3,12 @@ from math import comb, factorial, pow, log, exp
 import anndata as ad
 from scipy.stats import rankdata
 from itertools import chain
-from matching import *
-from matching_nx import *
+from .matching import *
+from .matching_nx import * 
+
 
 def cross_match_count(Z, matching, test_group):
-    print("counting cross matches")
+    print("counting cross matches.")
     pairs = [(Z.iloc[i], Z.iloc[j]) for (i, j) in matching]
     filtered_pairs = [pair for pair in pairs if (pair[0] == test_group) ^ (pair[1] == test_group)] # cross-match pairs contain test group exactly once
     a1 = len(filtered_pairs)
@@ -64,11 +65,10 @@ def rosenbaum_test(Z, matching, test_group):
 
 def kNN(adata, k, metric):
     print("calculating PCA and kNN graph.")
-    sc.pp.pca(adata)
     sc.pp.neighbors(adata, n_neighbors=k, metric=metric)
 
 
-def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis", rank=False, k=None, nx=False):
+def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean", rank=False, k=None, nx=False):
     """
     Perform Rosenbaum's matching-based test for checking the association between two groups 
     using a distance-based matching approach.
@@ -125,22 +125,35 @@ def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis
 
     if not isinstance(adata, ad.AnnData):
         raise TypeError("the input must be an AnnData object or a pandas DataFrame.")
-
-    if test_group not in adata.obs[group_by].values:
-        raise ValueError("the test group is not contained in your data.")
+        
+    if not isinstance(test_group, list): 
+        test_group = [test_group]
     
+    if reference:
+        if not isinstance(reference, list): 
+            reference = [reference]
+
+    for t in test_group:
+        if t not in adata.obs[group_by].values:
+            raise ValueError(f"the test group {t} is not contained in your data.")
+        
+        
     if rank:
         print("computing variable-wise ranks.")
         adata.X = np.apply_along_axis(rankdata, axis=0, arr=adata.X)
+    
+    if reference != None:       
+        adata = adata[adata.obs[group_by].isin(test_group + reference), :]
+        print(len(adata))
 
-    if reference != "rest":
-        print("Original group counts:")
-        adata = adata[adata.obs[group_by].isin([test_group, reference]), :]
-        print("Filtered and downsampled samples:")
-        print(adata.obs[group_by].value_counts())
+    adata.obs["XMatch_group"] = np.where(adata.obs[group_by].isin(test_group), "test", "reference")
+    group_by = "XMatch_group"
+    test_group = "test"
+    print(adata.obs[group_by].value_counts())
 
-
-    kNN(adata, k, metric)
+       
+    if k:
+        kNN(adata, k, metric)
     
     print("matching samples.")
     if nx: # NX based computation
@@ -150,17 +163,14 @@ def rosenbaum(adata, group_by, test_group, reference="rest", metric="mahalanobis
             distances = calculate_distances_nx(adata.X, metric)
             G = construct_graph_from_distances_nx(distances)
         matching = match_nx(G)
-        matching = [sorted(m) for m in matching]
 
     else: # graphtool based computation
         num_samples = len(adata)
         if k:
             G, weights = construct_graph_via_kNN(adata)
         else:
-            distances = calculate_distances(adata.X.toarray(), metric)
+            distances = calculate_distances(adata.X, metric)
             G, weights = construct_graph_from_distances(distances)
         matching = match(G, weights, num_samples)
-        matching = [sorted(m) for m in matching]
 
-
-    return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group=test_group), matching, G
+    return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group="test")
