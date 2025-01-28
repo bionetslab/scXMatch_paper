@@ -80,11 +80,8 @@ def construct_graph_from_distances(distances):
 
 
 def construct_graph_via_kNN(adata):
-    # is it better to calculate the distances first, and then calculate the NNs on that
-    # or to calculate the NNs and then calculate the distances only for these 
-    #print("extracting connectivities.")
     distances = adata.obsp['distances']
-    del adata
+    #del adata
 
     if not isinstance(distances, csr_matrix):
         distances = csr_matrix(distances)
@@ -94,7 +91,7 @@ def construct_graph_via_kNN(adata):
     G = gt.Graph(directed=False)
     num_nodes = distances.shape[0]
 
-    G.add_vertex(num_nodes)
+    #G.add_vertex(num_nodes) # this causes a segfault
 
     weights = G.new_edge_property("float") 
 
@@ -104,7 +101,7 @@ def construct_graph_via_kNN(adata):
         weights[edge] = max_dist + 1 - distances[row, col]
 
     G.edge_properties["weight"] = weights
-    del distances
+    # del distances
     return G, weights
 
 
@@ -112,7 +109,7 @@ def match(G, weights, num_samples):
     print("matching.")
     matching = max_cardinality_matching(G, weight=weights, minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
     matching_list = extract_matching(matching)
-    del G
+    # del G
     matching_list = [p for p in matching_list if ((p[0] < num_samples) and (p[1] < num_samples))] # TODO: check if this fully filters invalid matches!!!
     return matching_list
             
