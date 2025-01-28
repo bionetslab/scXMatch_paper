@@ -5,7 +5,7 @@ import anndata as ad
 import numpy as np
 import sys
 sys.path.append("..")
-from rosenbaum import rosenbaum
+from src import rosenbaum
 
 
 def test_on_ebi_data(accession="E-MTAB-9221", group_by="Factor Value[clinical history]", test_group="mild COVID-19", reference="Control", metric="euclidean", rank=False):
