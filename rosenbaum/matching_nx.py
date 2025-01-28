@@ -1,6 +1,8 @@
 import networkx as nx
 from scipy.sparse import csr_matrix
 import scanpy as sc
+import numpy as np
+
 
 try:
     from cupyx.scipy.spatial.distance import cdist as gpu_cdist
@@ -16,17 +18,23 @@ except:
 
 
 def calculate_distances_nx(samples, metric):
-    try:
-        if GPU:
-            print("trying to use GPU to calculate distance matrix.")
-        distances = cp.asnumpy(gpu_cdist(cp.array(samples), cp.array(samples), metric=metric)) 
+    if not isinstance(samples, np.ndarray):  # Check if it's a scipy sparse matrix
+        samples = samples.toarray()
 
-    except:
-        if GPU:
+    if GPU:
+        try:
+            print("trying to use GPU to calculate distance matrix.")
+            distances = cp.asnumpy(gpu_cdist(cp.array(samples), cp.array(samples), metric=metric)) 
+
+        except:
             print("using CPU to calculate distance matrix due to chosen metric.")
-        else:
-            print("using CPU to calculate distance matrix.")
-        distances = cpu_cdist(samples, samples, metric=metric)
+            distances = cpu_cdist(samples, samples, metric=metric)
+
+    else:
+        print("using CPU to calculate distance matrix.")
+
+        distances = cpu_cdist(XA=samples, XB=samples, metric=metric)
+
     return distances
 
 

@@ -20,6 +20,10 @@ except:
 
 
 def calculate_distances(samples, metric):
+    if not isinstance(samples, np.ndarray):  # Check if it's a scipy sparse matrix
+        samples = samples.toarray()
+
+    
     try:
         if GPU:
             print("trying to use GPU to calculate distance matrix.")
@@ -105,6 +109,7 @@ def construct_graph_via_kNN(adata):
 
 
 def match(G, weights, num_samples):
+    print("matching.")
     matching = max_cardinality_matching(G, weight=weights, minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
     matching_list = extract_matching(matching)
     del G

@@ -6,7 +6,7 @@ import logging
 
 
 logging.basicConfig(
-    filename="runtime_nx_log.txt",
+    filename="runtime_gt_log.txt",
     level=logging.INFO,
     format="%(message)s"
 )
@@ -45,11 +45,11 @@ def main():
     #n_obs = 100
     #n_var = 2
     #k = 5
-    reps = 100
+    reps = 10
     metric = "sqeuclidean"
     k_values = [2, 5, 10, 15]
     n_obs_values = [10, 100, 1000, 5000]
-    n_var_values = [10, 100, 1000, 5000]
+    n_var_values = [2] # [10, 100, 1000, 5000]
     parameter_combinations = itertools.product(k_values, n_obs_values, n_var_values)
 
     # Loop over parameter combinations            
@@ -63,14 +63,15 @@ def main():
             kNN(adata, k, metric)
                 
             # Time `test_nx`
-            nx_time = timeit.timeit(lambda: test_nx(adata, k, metric), number=reps)
-            avg_nx_time = nx_time / reps
-            logging.info(f"{k}; {n_obs}; {n_var}; {avg_nx_time:.6f}")
-            print(f"{k}; {n_obs}; {n_var}; {avg_nx_time:.6f}")
+            #nx_time = timeit.timeit(lambda: test_nx(adata, k, metric), number=reps)
+            #avg_nx_time = nx_time / reps
+            #logging.info(f"{k}; {n_obs}; {n_var}; {avg_nx_time:.6f}")
+            #print(f"{k}; {n_obs}; {n_var}; {avg_nx_time:.6f}")
             # Time `test_gt`
-            #gt_time = timeit.timeit(lambda: test_gt(adata, k, metric), number=reps)
-            #avg_gt_time = gt_time / reps
-            #logging.info(f"GT time: {avg_gt_time:.6f} seconds")
+            gt_time = timeit.timeit(lambda: test_gt(adata, k, metric), number=reps)
+            avg_gt_time = gt_time / reps
+            print(f"{k}; {n_obs}; {n_var}; {avg_gt_time:.6f}")
+            logging.info(f"{k}; {n_obs}; {n_var}; {avg_gt_time:.6f}")
 
         except Exception as e:
             logging.error(f"Error occurred with k={k}, n_obs={n_obs}, n_var={n_var}: {e}")
