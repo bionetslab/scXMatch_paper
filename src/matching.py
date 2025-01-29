@@ -3,6 +3,7 @@ from graph_tool.topology import max_cardinality_matching
 import graph_tool.all as gt
 from scipy.spatial.distance import cdist as cpu_cdist
 from scipy.sparse import csr_matrix
+import psutil
 
 
 try:
@@ -105,9 +106,16 @@ def construct_graph_via_kNN(adata):
 
 def match(G, weights, num_samples):
     print("matching.")
+    mem = psutil.virtual_memory()
+    print(f"Memory Usage: {mem.percent}% (Available: {mem.available / 1e9:.2f} GB)")
+
+
     matching = max_cardinality_matching(G, weight=weights, minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
     matching_list = extract_matching(matching)
     # del G
+    mem = psutil.virtual_memory()
+    print(f"Memory Usage: {mem.percent}% (Available: {mem.available / 1e9:.2f} GB)")
+
     matching_list = [p for p in matching_list if ((p[0] < num_samples) and (p[1] < num_samples))] # TODO: check if this fully filters invalid matches!!!
     return matching_list
             

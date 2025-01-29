@@ -7,6 +7,7 @@ from src.matching import *
 from src.matching_nx import * 
 import scanpy as sc
 
+
 def cross_match_count(Z, matching, test_group):
     print("counting cross matches.")
     pairs = [(Z.iloc[i], Z.iloc[j]) for (i, j) in matching]
@@ -69,7 +70,7 @@ def kNN(adata, k, metric):
     sc.pp.neighbors(adata, n_neighbors=k, metric=metric)
 
 
-def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean", rank=False, k=None, nx=False):
+def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean", rank=False, k=None, use_nx=False):
     """
     Perform Rosenbaum's matching-based test for checking the association between two groups 
     using a distance-based matching approach.
@@ -157,7 +158,7 @@ def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean",
         kNN(adata, k, metric)
     
     print("matching samples.")
-    if nx: # NX based computation
+    if use_nx: # NX based computation
         if k:
             G = construct_graph_via_kNN_nx(adata)
         else:
