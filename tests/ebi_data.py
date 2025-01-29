@@ -1,8 +1,5 @@
 import scanpy as sc
 import matplotlib.pyplot as plt
-import pandas as pd
-import anndata as ad
-import numpy as np
 import sys
 sys.path.append("..")
 from src import rosenbaum
