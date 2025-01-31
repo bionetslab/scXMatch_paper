@@ -45,22 +45,17 @@ def construct_graph_from_distances_nx(distances):
 
 
 def construct_graph_via_kNN_nx(adata):
-    #print("extracting connectivities.")
     distances = adata.obsp['distances']
-    del adata
 
     if not isinstance(distances, csr_matrix):
         distances = csr_matrix(distances)
 
-    #print("assembling edges")
     G = nx.from_scipy_sparse_array(distances)
-    del distances
     return G
 
 
 def match_nx(G):
     matching = nx.min_weight_matching(G)     
-    del G
     return matching
             
 
