@@ -1,15 +1,12 @@
 import numpy as np
-from src.rosenbaum import *
-import timeit
+import sys
+sys.path.append("..")
+from src import *
 import itertools
 import logging
+import time
+import concurrent.futures
 
-
-logging.basicConfig(
-    filename="runtime_gt_log.txt",
-    level=logging.INFO,
-    format="%(message)s"
-)
 
 def simulate_data(n_obs, n_var):
     samples = [np.random.normal(0, 1, n_var) for _ in range(n_obs)]
@@ -29,55 +26,79 @@ def test_nx(adata, k, metric):
 
 
 def test_gt(adata, k, metric):
-    num_samples = len(adata)
     if k:
-        G, weights = construct_graph_via_kNN(adata)
+        G = construct_graph_via_kNN(adata)
     else:
         distances = calculate_distances(adata.X.toarray(), metric)
-        G, weights = construct_graph_from_distances(distances)
-    matching = match(G, weights, num_samples)
+        G = construct_graph_from_distances(distances)
+    matching = match(G)
     #matching = [sorted(m) for m in matching]
     return matching 
     
 
-def main():
-
-    #n_obs = 100
-    #n_var = 2
-    #k = 5
-    reps = 10
-    metric = "sqeuclidean"
-    k_values = [2, 5, 10, 15]
-    n_obs_values = [10, 100, 1000, 5000]
-    n_var_values = [2] # [10, 100, 1000, 5000]
-    parameter_combinations = itertools.product(k_values, n_obs_values, n_var_values)
-
-    # Loop over parameter combinations            
-    logging.info(f"k; n_obs; n_var; t[s]")
-
-    for k, n_obs, n_var in parameter_combinations:
-        try:
-
-            # Generate data
-            adata = simulate_data(n_obs, n_var)
+def run_test(k, n_obs, n_var, metric):
+    adata = simulate_data(n_obs, n_var)
+    
+    t0 = time.time()
+    if k:
+        if k < n_obs:
             kNN(adata, k, metric)
-                
-            # Time `test_nx`
-            #nx_time = timeit.timeit(lambda: test_nx(adata, k, metric), number=reps)
-            #avg_nx_time = nx_time / reps
-            #logging.info(f"{k}; {n_obs}; {n_var}; {avg_nx_time:.6f}")
-            #print(f"{k}; {n_obs}; {n_var}; {avg_nx_time:.6f}")
-            # Time `test_gt`
-            gt_time = timeit.timeit(lambda: test_gt(adata, k, metric), number=reps)
-            avg_gt_time = gt_time / reps
-            print(f"{k}; {n_obs}; {n_var}; {avg_gt_time:.6f}")
-            logging.info(f"{k}; {n_obs}; {n_var}; {avg_gt_time:.6f}")
+            t1 = time.time()
+            
+            matching_nx = test_nx(adata, k, metric)
+            t2 = time.time()
+            logging.info(f"{k}; {n_obs}; {n_var}; {t1 - t0:.6f}; {t2 - t1:.6f}; -1")
+            
+            matching_gt = test_gt(adata, k, metric)
+            t3 = time.time()
 
-        except Exception as e:
-            logging.error(f"Error occurred with k={k}, n_obs={n_obs}, n_var={n_var}: {e}")
-            continue  # Continue to the next combination even if one fails
+            # Sort matchings for comparison
+            matching_nx = sorted([sorted(m) for m in matching_nx], key=lambda m: m[0])
 
-    #return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group=test_group), matching, G
+            matching_gt = sorted([sorted(m) for m in matching_gt], key=lambda m: m[0])
+            
+            # Check if matchings are equal
+            match_check = matching_nx == matching_gt
+
+            # Log the results directly in the function
+            logging.info(f"{k}; {n_obs}; {n_var}; {t1 - t0:.6f}; {t2 - t1:.6f}; {t3 - t2:.6f}")
+            return k, n_obs, n_var, t1 - t0, t2 - t1, t3 - t2, match_check
+        else:
+            print("skipped", k, n_obs)
+            return
+    return
+
+
+def main():
+    logging.basicConfig(
+        filename="/data/bionets/je30bery/rosenbaum_test/evaluation_results/runtime/runtime_log.txt",
+        level=logging.INFO,
+        format="%(message)s"
+    )
+
+    metric = "sqeuclidean"
+    k_values = [2, 5, 10, None]
+    n_obs_values = [100, 1000, 5000]
+    n_var_values = [100, 1000, 2000, 5000]
+    parameter_combinations = [(10, 5000, 1000), 
+                              (10, 5000, 5000)]
+    # Prepare logging header
+    logging.info(f"k; n_obs; n_var; t[s] PCA; t[s] NX; t[s] GT")
+
+    # Start measuring the overall runtime
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = []
+        for k, n_obs, n_var in parameter_combinations:
+            futures.append(executor.submit(run_test, k, n_obs, n_var, metric))
+        
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()  # Ensure that the result is fetched and logged, even in case of error
+            except Exception as e:
+                logging.error(f"Error in a future task: {e}")
+
+
 
 
 if __name__ == "__main__":

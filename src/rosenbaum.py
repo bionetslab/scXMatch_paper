@@ -157,7 +157,6 @@ def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean",
     if k:
         kNN(adata, k, metric)
     
-    print("matching samples.")
     if use_nx: # NX based computation
         if k:
             G = construct_graph_via_kNN_nx(adata)
@@ -169,10 +168,10 @@ def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean",
     else: # graphtool based computation
         num_samples = len(adata)
         if k:
-            G, weights = construct_graph_via_kNN(adata)
+            G = construct_graph_via_kNN(adata)
         else:
             distances = calculate_distances(adata.X, metric)
-            G, weights = construct_graph_from_distances(distances)
-        matching = match(G, weights, num_samples)
+            G = construct_graph_from_distances(distances)
+        matching = match(G, num_samples)
 
     return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group="test")

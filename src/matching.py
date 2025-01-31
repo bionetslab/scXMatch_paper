@@ -4,6 +4,8 @@ import graph_tool.all as gt
 from scipy.spatial.distance import cdist as cpu_cdist
 from scipy.sparse import csr_matrix
 import psutil
+import sys
+sys.setrecursionlimit(1000)  # Adjust as needed
 
 
 try:
@@ -63,59 +65,45 @@ def extract_matching(matching_map):
 
 def construct_graph_from_distances(distances):
     num_samples = distances.shape[0]
+    print("num samples", num_samples, "edges", len(G.edge_properties["weight"]))
     print("creating distance graph.")
-
-    G = gt.Graph(directed=False)
-    G.add_edge_list([(i, j) for i in range(num_samples) for j in range(i+1, num_samples)])
-    
-    weights = G.new_edge_property("double")
-    for edge in G.edges():
-        i, j = int(edge.source()), int(edge.target())
-        weights[edge] = distances[i, j]
-    G.edge_properties["weight"] = weights
-    return G, weights
-
-
+    transposed_distances = distances.transpose()
+    combined_distances = np.maximum(distances.todense(), transposed_distances.todense())
+    sparse_weights = csr_matrix(combined_distances)
+    G = gt.Graph(sparse_weights, directed=False)
+    return G
 
 
 def construct_graph_via_kNN(adata):
-    distances = adata.obsp['distances']
-    #del adata
+    distances = adata.obsp["distances"]
+    max_dist = distances.max() 
 
-    if not isinstance(distances, csr_matrix):
-        distances = csr_matrix(distances)
-    max_dist = np.max(distances)
+    # only transform non-zero entries
+    print(len(distances.data))
+    distances.data = max_dist + 1 - distances.data
+    print(len(distances.data))
+    # the following seems a little cumbersome, however, if you pass a 
+    # csr matrix to the graph-tool Graph constructor with directed=False, 
+    # it will automatically ignore the lower diagonal. The distances matrix 
+    # is technically directed, because a can be b's closest neighbor while b is not a's.
+    # For the max cardinality min weight matching, we are generous and make all
+    # directed edges undirected edges. 
+    # Not using the csr matrix as input format unfortunately leads to segmentation faults.
 
-    #print("assembling edges")
-    G = gt.Graph(directed=False)
-    
-    #num_nodes = distances.shape[0]
-    #G.add_vertex(num_nodes) # this causes a segfault
+    transposed_distances = distances.transpose()
+    combined_distances = np.maximum(distances.todense(), transposed_distances.todense())
+    sparse_weights = csr_matrix(combined_distances)
 
-    weights = G.new_edge_property("float") 
-
-    rows, cols = distances.nonzero()
-    for row, col in zip(rows, cols):
-        edge = G.add_edge(row, col)  
-        weights[edge] = max_dist + 1 - distances[row, col]
-
-    G.edge_properties["weight"] = weights
-    # del distances
-    return G, weights
+    G = gt.Graph(sparse_weights, directed=False)
+    return G
 
 
-def match(G, weights, num_samples):
+def match(G):
+    num_samples = G.num_vertices()
+    print("num samples", num_samples, "edges", len(G.edge_properties["weight"]))
     print("matching.")
-    mem = psutil.virtual_memory()
-    print(f"Memory Usage: {mem.percent}% (Available: {mem.available / 1e9:.2f} GB)")
-
-
-    matching = max_cardinality_matching(G, weight=weights, minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
+    matching = max_cardinality_matching(G, weight=G.edge_properties["weight"], minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
     matching_list = extract_matching(matching)
-    # del G
-    mem = psutil.virtual_memory()
-    print(f"Memory Usage: {mem.percent}% (Available: {mem.available / 1e9:.2f} GB)")
-
-    matching_list = [p for p in matching_list if ((p[0] < num_samples) and (p[1] < num_samples))] # TODO: check if this fully filters invalid matches!!!
+    matching_list = [p for p in matching_list if ((p[0] < num_samples) and (p[1] < num_samples))]
     return matching_list
             
