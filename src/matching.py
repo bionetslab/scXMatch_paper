@@ -2,7 +2,7 @@ import numpy as np
 from graph_tool.topology import max_cardinality_matching
 import graph_tool.all as gt
 from scipy.spatial.distance import cdist as cpu_cdist
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, tril, triu
 import psutil
 import sys
 sys.setrecursionlimit(1000)  # Adjust as needed
@@ -79,9 +79,7 @@ def construct_graph_via_kNN(adata):
     max_dist = distances.max() 
 
     # only transform non-zero entries
-    print(len(distances.data))
-    distances.data = max_dist + 1 - distances.data
-    print(len(distances.data))
+    distances.data = max_dist + 1 - distances.data # transform so that weight minimization ~ weight maximization
     # the following seems a little cumbersome, however, if you pass a 
     # csr matrix to the graph-tool Graph constructor with directed=False, 
     # it will automatically ignore the lower diagonal. The distances matrix 
@@ -90,11 +88,13 @@ def construct_graph_via_kNN(adata):
     # directed edges undirected edges. 
     # Not using the csr matrix as input format unfortunately leads to segmentation faults.
 
-    transposed_distances = distances.transpose()
-    combined_distances = np.maximum(distances.todense(), transposed_distances.todense())
-    sparse_weights = csr_matrix(combined_distances)
+    lower_tri = tril(distances)
+    upper_tri = triu(distances)
 
-    G = gt.Graph(sparse_weights, directed=False)
+    transposed_lower_tri = lower_tri.transpose()
+    sparse_distances = transposed_lower_tri.maximum(upper_tri)
+
+    G = gt.Graph(sparse_distances, directed=False) 
     return G
 
 

@@ -26,143 +26,69 @@ def scanpy_setup(adata):
     return adata
 
 
-def run_mcfarland(path="/data/bionets/datasets/scrnaseq_ji/mcfarland.hdf5", use_nx=False):
-    if use_nx:
-        logging.basicConfig(
-            filename="../evaluation_results/mcfarland_nx_log.txt",
-            level=logging.INFO,
-            format="%(message)s"
-        )
-    else:
-        logging.basicConfig(
-            filename="../evaluation_results/mcfarland_gt_log.txt",
-            level=logging.INFO,
-            format="%(message)s"
-        )
-    
-    adata = read_h5ad(path)
-    adata = scanpy_setup(adata)
-
-    g6 = [v for v in adata.obs["perturbation"].values if v.endswith("_6")]
-    g24 = [v for v in adata.obs["perturbation"].values if v.endswith("_24")]
-
-    logging.info(f"test_group; k; p; z; s; t")
-    print(adata.obs["perturbation"].value_counts())
-    
-    for k in [2, 5, 10]:
-        for i, test_group in enumerate([g6, g24]):
-            start = time.time()
-            p, z, s = rosenbaum(adata, group_by="perturbation", reference=["control"], test_group=test_group, rank=False, metric="sqeuclidean", k=k, use_nx=use_nx)    
-            duration = time.time() - start
-            logging.info(f"{np.unique(test_group)}; {k}; {p}; {z}; {s}; {duration:.6f}")
-
-
-def run_norman(path="/data/bionets/datasets/scrnaseq_ji/norman.hdf5", use_nx=False):
-    if use_nx:
-        logging.basicConfig(
-            filename="../evaluation_results/norman_nx_log.txt",
-            level=logging.INFO,
-            format="%(message)s"
-        )
-    else:
-        logging.basicConfig(
-            filename="../evaluation_results/norman_gt_log.txt",
-            level=logging.INFO,
-            format="%(message)s"
-        )
-    
-    adata = read_h5ad(path)
-    adata = scanpy_setup(adata)
-
-    print(adata.obs["n_guides"].value_counts())
-    adata.obs['n_guides'] = np.where(
-        adata.obs["perturbation"].str.contains("control"),  # Check if "control" is in the perturbation
-        "control",  # If true, assign "control"
-        adata.obs["perturbation"].str.count("\+") + 1  # Otherwise, count "+" and add 1
-    )    
-
-    logging.info(f"test_group; k; p; z; s; t")
-        
-    reference = "control"
-    reference_subset = sc.pp.subsample(adata[adata.obs["n_guides"] == reference], n_obs=1000, copy=True)
-
-    for k in [2, 5, 10]:
-        for i, test_group in enumerate(["1", "2"]):
-            test_subset = sc.pp.subsample(adata[adata.obs["n_guides"] == test_group], n_obs=1000, copy=True)
-            subset = ad.concat([reference_subset, test_subset])
-            start = time.time()
-            p, z, s = rosenbaum(subset.copy(), group_by="n_guides", reference=reference, test_group=test_group, rank=False, metric="sqeuclidean", k=k, use_nx=use_nx)    
-            duration = time.time() - start
-            logging.info(f"{test_group}; {reference}; {k}; {p}; {z}; {s}; {duration:.6f}")
-
-
-
-def run_sciplex(path="/data/bionets/datasets/scrnaseq_ji/sciplex_A549.hdf5", use_nx=False):
-    name = os.path.splitext(os.path.basename(path))[0]
-
-    if use_nx:
-        logging.basicConfig(
-            filename=f"../evaluation_results/{name}_nx_log.txt",
-            level=logging.INFO,
-            format="%(message)s"
-        )
-    else:
-        logging.basicConfig(
-            filename=f"../evaluation_results/{name}_gt_log.txt",
-            level=logging.INFO,
-            format="%(message)s"
+def evaluate(name, use_nx, group_by, ks=[5], sub_sample_size=1000, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/"):
+    method = "nx" if use_nx else "gt"
+    log_name = f"../evaluation_results/{name}_{method}_subsampled_{sub_sample_size}_log.txt"    
+    logging.basicConfig(
+        filename=log_name,
+        level=logging.INFO,
+        format="%(message)s"
     )
     
-    adata = read_h5ad(path)
+    file_name = os.path.join(data_path, f"{name}.hdf5")
+    adata = read_h5ad(file_name)
     adata = scanpy_setup(adata)
-    reference = 0.0
 
-    reference_subset = sc.pp.subsample(adata[adata.obs["dose_value"] == 0.0], n_obs=1000, copy=True)
+    if name == "mcfarland":
+        g6 = list(np.unique([v for v in adata.obs["perturbation"].values if v.endswith("_6")]))
+        g24 = list(np.unique([v for v in adata.obs["perturbation"].values if v.endswith("_24")]))
+        test_groups = [g6, g24]
+        reference = "control"
+        
+    elif name == "norman":
+        adata.obs['n_guides'] = np.where(
+            adata.obs["perturbation"].str.contains("control"),
+            "control",  # If true, assign "control"
+            adata.obs["perturbation"].str.count("\+") + 1)    
+        test_groups = [["1"], ["2"]]
+        reference = "control"
+        
+    elif "sciplex" in name:
+        test_groups = [[10.0], [100.0], [1000.0], [10000.0]]
+        reference = 0.0
+   
+    elif "schiebinger" in name:
+        test_groups = ['D1.5', 'D2', 'D2.5', 'D3', 'D3.5', 'D4', 'D4.5', 'D5', 'D5.5', 'D6', 'D6.5', 'D7', 'D7.5', 'D8', 'D8.5', 'D9', 'D9.5', 'D10', 'D10.5', 'D11', 'D11.5', 'D12', 'D12.5', 'D13', 'D13.5', 'D14', 'D14.5', 'D15', 'D15.5', 'D16', 'D16.5', 'D17', 'D17.5', 'D18']
+        reference = "control"
+    else:
+        raise ValueError("Unknown dataset")
 
-    for k in [2, 5, 10]:
-        for test_group in [10.0, 100.0, 1000.0, 10000.0]:
-            test_subset = sc.pp.subsample(adata[adata.obs["dose_value"] == test_group], n_obs=1000, copy=True)
-            subset = ad.concat([reference_subset, test_subset])
-            print(subset)
+        
+    if sub_sample_size:
+        if len(adata[adata.obs[group_by] == reference]) > sub_sample_size:
+            reference_subset = sc.pp.subsample(adata[adata.obs[group_by] == reference], n_obs=sub_sample_size, copy=True)
+        else:
+            reference_subset = adata[adata.obs[group_by] == reference]
+
+    results = list()
+    for k in ks:
+        for i, test_group in enumerate(test_groups):
+            if sub_sample_size:
+                if not isinstance(test_group, list):
+                    test_group = [test_group]
+                if len(adata[adata.obs[group_by].isin(test_group)]) > sub_sample_size:
+                    test_subset = sc.pp.subsample(adata[adata.obs[group_by].isin(test_group)], n_obs=sub_sample_size, copy=True)
+                else:
+                    test_subset = adata[adata.obs[group_by].isin(test_group)]
+                subset = ad.concat([reference_subset, test_subset])
+            else:
+                subset = adata
             start = time.time()
-            p, z, s = rosenbaum(subset.copy(), group_by="dose_value", reference=[reference], test_group=[test_group], rank=False, metric="sqeuclidean", k=k, use_nx=use_nx)    
+            p, z, s = rosenbaum(subset.copy(), group_by=group_by, reference=reference, test_group=test_group, rank=rank, metric=metric, k=k, use_nx=use_nx)    
             duration = time.time() - start
             logging.info(f"{test_group}; {reference}; {k}; {p}; {z}; {s}; {duration:.6f}")
-
-
-
-def run_schiebinger(path="/data/bionets/datasets/scrnaseq_ji/schiebinger.hdf5", use_nx=False):
-    if use_nx:
-        logging.basicConfig(
-            filename="../evaluation_results/schiebinger_nx_log.txt",
-            level=logging.INFO,
-            format="%(message)s"
-        )
-    else:
-        logging.basicConfig(
-            filename="../evaluation_results/schiebinger_gt_log.txt",
-            level=logging.INFO,
-            format="%(message)s"
-        )
-    
-    adata = read_h5ad(path)
-    adata = scanpy_setup(adata)
-
-    logging.info(f"test_group; k; p; z; s; t")
-    print(sorted(np.unique(adata.obs["perturbation"].values)))
-       
-    reference = "control"
-    reference_subset = sc.pp.subsample(adata[adata.obs["perturbation"] == "control"], n_obs=1000, copy=True)
-
-    for k in [5, 10]:
-        for test_group in ['D1.5', 'D2', 'D2.5', 'D3', 'D3.5', 'D4', 'D4.5', 'D5', 'D5.5', 'D6', 'D6.5', 'D7', 'D7.5', 'D8', 'D8.5', 'D9', 'D9.5', 'D10', 'D10.5', 'D11', 'D11.5', 'D12', 'D12.5', 'D13', 'D13.5', 'D14', 'D14.5', 'D15', 'D15.5', 'D16', 'D16.5', 'D17', 'D17.5', 'D18']:
-            print("test group")
-            test_subset = sc.pp.subsample(adata[adata.obs["perturbation"] == test_group], n_obs=1000, copy=True)
-            subset = ad.concat([reference_subset, test_subset])
-            start = time.time()
-            p, z, s = rosenbaum(subset.copy(), group_by="perturbation", reference=reference, test_group=test_group, rank=False, metric="sqeuclidean", k=k, use_nx=use_nx)    
-            duration = time.time() - start
-            logging.info(f"total; {test_group}; {reference}; {k}; {p}; {z}; {s}; {duration:.6f}")
+            results.append([test_group, reference, k, p, z, s, duration])
+    return results
 
 
 
@@ -170,22 +96,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("run")
     parser.add_argument("dataset", type=str, choices=["schiebinger", "mcfarland", "norman", "sciplex_A549", "sciplex_K562", "sciplex_MCF7"])
     parser.add_argument("use_nx", type=str, choices=["False", "True"])
+    parser.add_argument("sub_sample_sizes", type=int)
+
     args = parser.parse_args()
     
     use_nx = True if args.use_nx == "True" else False
     dataset = args.dataset
-
+    sub_sample_size = args.sub_sample_sizes
     print(dataset, use_nx)
 
     if args.dataset == "schiebinger":
-         run_schiebinger(path="/data/bionets/datasets/scrnaseq_ji/schiebinger.hdf5", use_nx=use_nx)
+        evaluate("schiebinger", use_nx=True, group_by="perturbation", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
     elif args.dataset == "mcfarland":
-        run_mcfarland(path="/data/bionets/datasets/scrnaseq_ji/mcfarland.hdf5", use_nx=use_nx)
+        evaluate("mcfarland", use_nx=True, group_by="perturbation", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
     elif args.dataset == "norman":
-        run_norman(path="/data/bionets/datasets/scrnaseq_ji/norman.hdf5", use_nx=use_nx)
+        evaluate("norman", use_nx=True, group_by="n_guides", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
     elif args.dataset == "sciplex_A549":
-        run_sciplex(path="/data/bionets/datasets/scrnaseq_ji/sciplex_A549.hdf5", use_nx=use_nx)
+        evaluate("sciplex_A549", use_nx=True, group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
     elif args.dataset == "sciplex_K562":
-        run_sciplex(path="/data/bionets/datasets/scrnaseq_ji/sciplex_K562.hdf5", use_nx=use_nx)
+        evaluate("sciplex_K562", use_nx=True, group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
     elif args.dataset == "sciplex_MCF7":
-        run_sciplex(path="/data/bionets/datasets/scrnaseq_ji/sciplex_MCF7.hdf5", use_nx=use_nx)
+        evaluate("sciplex_MCF7", use_nx=True, group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
