@@ -45,9 +45,9 @@ def run_test(k, n_obs, n_var, metric):
             kNN(adata, k, metric)
             t1 = time.time()
             
-            matching_nx = test_nx(adata, k, metric)
+            #matching_nx = test_nx(adata, k, metric)
             t2 = time.time()
-            logging.info(f"{k}; {n_obs}; {n_var}; {t1 - t0:.6f}; {t2 - t1:.6f}; -1")
+            #logging.info(f"{k}; {n_obs}; {n_var}; {t1 - t0:.6f}; {t2 - t1:.6f}; -1")
             
             matching_gt = test_gt(adata, k, metric)
             t3 = time.time()
@@ -77,11 +77,12 @@ def main():
     )
 
     metric = "sqeuclidean"
-    k_values = [2, 5, 10, None]
-    n_obs_values = [100, 1000, 5000]
+    k_values = [5, 10]
+    n_obs_values = [5000]
     n_var_values = [100, 1000, 2000, 5000]
-    parameter_combinations = [(10, 5000, 1000), 
-                              (10, 5000, 5000)]
+    parameter_combinations = itertools.product(k_values, n_obs_values, n_var_values)
+    #parameter_combinations = [(10, 5000, 1000), 
+    #                          (10, 5000, 5000)]
     # Prepare logging header
     logging.info(f"k; n_obs; n_var; t[s] PCA; t[s] NX; t[s] GT")
 

@@ -131,7 +131,7 @@ def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean",
     if not isinstance(test_group, list): 
         test_group = [test_group]
     
-    if reference:
+    if reference != None:
         if not isinstance(reference, list): 
             reference = [reference]
 
@@ -146,7 +146,6 @@ def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean",
     
     if reference != None:       
         adata = adata[adata.obs[group_by].isin(test_group + reference), :]
-        print(len(adata))
 
     adata.obs["XMatch_group"] = np.where(adata.obs[group_by].isin(test_group), "test", "reference")
     group_by = "XMatch_group"
@@ -172,6 +171,6 @@ def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean",
         else:
             distances = calculate_distances(adata.X, metric)
             G = construct_graph_from_distances(distances)
-        matching = match(G, num_samples)
+        matching = match(G)
 
     return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group="test")
