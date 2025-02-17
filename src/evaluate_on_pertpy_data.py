@@ -17,7 +17,7 @@ def scanpy_setup(adata):
         adata.X = adata.layers['counts'].copy()
     else:
         adata.layers['counts'] = adata.X.copy()
-    sc.pp.normalize_total(adata, target_sum=1e6, exclude_highly_expressed=True)
+    #sc.pp.normalize_total(adata, target_sum=1e6, exclude_highly_expressed=True)
     sc.pp.log1p(adata)
     sc.pp.highly_variable_genes(adata, n_top_genes=2000)
     adata = adata[:, adata.var.highly_variable]

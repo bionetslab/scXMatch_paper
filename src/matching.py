@@ -65,10 +65,9 @@ def extract_matching(matching_map):
 
 def construct_graph_from_distances(distances):
     num_samples = distances.shape[0]
-    print("num samples", num_samples, "edges", len(G.edge_properties["weight"]))
     print("creating distance graph.")
     transposed_distances = distances.transpose()
-    combined_distances = np.maximum(distances.todense(), transposed_distances.todense())
+    combined_distances = np.maximum(distances, transposed_distances)
     sparse_weights = csr_matrix(combined_distances)
     G = gt.Graph(sparse_weights, directed=False)
     return G
