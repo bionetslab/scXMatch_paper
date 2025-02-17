@@ -29,6 +29,9 @@ def get_p_value(a1, n, N, I):
         if A0 < 0 or A2 < 0:
             continue  
 
+        A0 = int(A0)
+        A2 = int(A2)
+        
         log_numerator = A1 * log(2) + log(factorial(I))
         log_denominator = log(comb(N, n)) + log(factorial(A0)) + log(factorial(A1)) + log(factorial(A2))
         p_value += exp(log_numerator - log_denominator)
@@ -171,6 +174,6 @@ def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean",
         else:
             distances = calculate_distances(adata.X, metric)
             G = construct_graph_from_distances(distances)
-        matching = match(G)
+        matching = match(G, num_samples)
 
     return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group="test")
