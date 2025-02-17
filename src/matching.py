@@ -65,7 +65,7 @@ def extract_matching(matching_map):
 
 def construct_graph_from_distances(distances):
     num_samples = distances.shape[0]
-    print("creating distance graph.")
+    print("creating distance graph with", num_samples, "samples")
     transposed_distances = distances.transpose()
     combined_distances = np.maximum(distances, transposed_distances)
     sparse_weights = csr_matrix(combined_distances)
@@ -97,10 +97,7 @@ def construct_graph_via_kNN(adata):
     return G
 
 
-def match(G):
-    num_samples = G.num_vertices()
-    print("num samples", num_samples, "edges", len(G.edge_properties["weight"]))
-    print("matching.")
+def match(G, num_samples):
     matching = max_cardinality_matching(G, weight=G.edge_properties["weight"], minimize=False) # "minimize=True" only works with a heuristic, therefore we use (max_distance + 1 - distance_ij) and maximize 
     matching_list = extract_matching(matching)
     matching_list = [p for p in matching_list if ((p[0] < num_samples) and (p[1] < num_samples))]
