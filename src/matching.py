@@ -24,7 +24,6 @@ def calculate_distances(samples, metric):
     if not isinstance(samples, np.ndarray):  # Check if it's a scipy sparse matrix
         samples = samples.toarray()
 
-    
     try:
         if GPU:
             print("trying to use GPU to calculate distance matrix.")
@@ -85,7 +84,6 @@ def construct_graph_via_kNN(adata):
     # is technically directed, because a can be b's closest neighbor while b is not a's.
     # For the max cardinality min weight matching, we are generous and make all
     # directed edges undirected edges. 
-    # Not using the csr matrix as input format unfortunately leads to segmentation faults.
 
     lower_tri = tril(distances)
     upper_tri = triu(distances)

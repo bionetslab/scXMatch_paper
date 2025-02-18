@@ -13,18 +13,6 @@ def simulate_data(n_obs, n_var):
     adata = ad.AnnData(np.array(samples))
     return adata
 
-
-def test_nx(adata, k, metric):
-    if k:
-        G = construct_graph_via_kNN_nx(adata)
-    else:
-        distances = calculate_distances_nx(adata.X, metric)
-        G = construct_graph_from_distances_nx(distances)
-    matching = match_nx(G)
-    #matching = [sorted(m) for m in matching]
-    return matching 
-
-
 def test_gt(adata, k, metric):
     if k:
         G = construct_graph_via_kNN(adata)
@@ -45,24 +33,10 @@ def run_test(k, n_obs, n_var, metric):
             kNN(adata, k, metric)
             t1 = time.time()
             
-            #matching_nx = test_nx(adata, k, metric)
-            t2 = time.time()
-            #logging.info(f"{k}; {n_obs}; {n_var}; {t1 - t0:.6f}; {t2 - t1:.6f}; -1")
-            
             matching_gt = test_gt(adata, k, metric)
-            t3 = time.time()
-
-            # Sort matchings for comparison
-            matching_nx = sorted([sorted(m) for m in matching_nx], key=lambda m: m[0])
-
-            matching_gt = sorted([sorted(m) for m in matching_gt], key=lambda m: m[0])
+            t2 = time.time()
+            logging.info(f"{k}; {n_obs}; {n_var}; {t1 - t0:.6f}; {t2 - t1:.6f}")
             
-            # Check if matchings are equal
-            match_check = matching_nx == matching_gt
-
-            # Log the results directly in the function
-            logging.info(f"{k}; {n_obs}; {n_var}; {t1 - t0:.6f}; {t2 - t1:.6f}; {t3 - t2:.6f}")
-            return k, n_obs, n_var, t1 - t0, t2 - t1, t3 - t2, match_check
         else:
             print("skipped", k, n_obs)
             return
@@ -81,13 +55,9 @@ def main():
     n_obs_values = [5000]
     n_var_values = [100, 1000, 2000, 5000]
     parameter_combinations = itertools.product(k_values, n_obs_values, n_var_values)
-    #parameter_combinations = [(10, 5000, 1000), 
-    #                          (10, 5000, 5000)]
-    # Prepare logging header
-    logging.info(f"k; n_obs; n_var; t[s] PCA; t[s] NX; t[s] GT")
-
-    # Start measuring the overall runtime
-
+    
+    logging.info(f"k; n_obs; n_var; t[s] PCA; t[s] GT")
+    
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = []
         for k, n_obs, n_var in parameter_combinations:

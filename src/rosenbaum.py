@@ -4,7 +4,6 @@ import anndata as ad
 from scipy.stats import rankdata
 from itertools import chain
 from src.matching import *
-from src.matching_nx import * 
 import scanpy as sc
 
 
@@ -37,9 +36,8 @@ def get_p_value(a1, n, N, I):
         p_value += exp(log_numerator - log_denominator)
 
     return p_value
-        
 
-
+    
 def get_z_score(a1, n, N):
     m = N - n
     E = n * m / (N - 1) # Eq. 3 in Rosenbaum paper
@@ -73,7 +71,7 @@ def kNN(adata, k, metric):
     sc.pp.neighbors(adata, n_neighbors=k, metric=metric)
 
 
-def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean", rank=False, k=None, use_nx=False):
+def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean", rank=False, k=None):
     """
     Perform Rosenbaum's matching-based test for checking the association between two groups 
     using a distance-based matching approach.
@@ -142,38 +140,29 @@ def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean",
         if t not in adata.obs[group_by].values:
             raise ValueError(f"the test group {t} is not contained in your data.")
         
+    if reference != None:       
+        adata = adata[adata.obs[group_by].isin(test_group + reference), :]
         
     if rank:
         print("computing variable-wise ranks.")
         adata.X = np.apply_along_axis(rankdata, axis=0, arr=adata.X)
     
-    if reference != None:       
-        adata = adata[adata.obs[group_by].isin(test_group + reference), :]
 
     adata.obs["XMatch_group"] = np.where(adata.obs[group_by].isin(test_group), "test", "reference")
+    
     group_by = "XMatch_group"
     test_group = "test"
     print(adata.obs[group_by].value_counts())
-
        
     if k:
         kNN(adata, k, metric)
     
-    if use_nx: # NX based computation
-        if k:
-            G = construct_graph_via_kNN_nx(adata)
-        else:
-            distances = calculate_distances_nx(adata.X, metric)
-            G = construct_graph_from_distances_nx(distances)
-        matching = match_nx(G)
+    num_samples = len(adata)
+    if k:
+        G = construct_graph_via_kNN(adata)
+    else:
+        distances = calculate_distances(adata.X, metric)
+        G = construct_graph_from_distances(distances)
+    matching = match(G, num_samples)
 
-    else: # graphtool based computation
-        num_samples = len(adata)
-        if k:
-            G = construct_graph_via_kNN(adata)
-        else:
-            distances = calculate_distances(adata.X, metric)
-            G = construct_graph_from_distances(distances)
-        matching = match(G, num_samples)
-
-    return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group="test")
+    return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group=test_group)

@@ -26,8 +26,7 @@ def scanpy_setup(adata):
     return adata
 
 
-def evaluate(name, use_nx, group_by, ks=[5], sub_sample_size=1000, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/"):
-    method = "nx" if use_nx else "gt"
+def evaluate(name, group_by, ks=[5], sub_sample_size=1000, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/"):
     log_name = f"../evaluation_results/{name}_{method}_subsampled_{sub_sample_size}_log.txt"    
     logging.basicConfig(
         filename=log_name,
@@ -84,7 +83,7 @@ def evaluate(name, use_nx, group_by, ks=[5], sub_sample_size=1000, rank=False, m
             else:
                 subset = adata
             start = time.time()
-            p, z, s = rosenbaum(subset.copy(), group_by=group_by, reference=reference, test_group=test_group, rank=rank, metric=metric, k=k, use_nx=use_nx)    
+            p, z, s = rosenbaum(subset.copy(), group_by=group_by, reference=reference, test_group=test_group, rank=rank, metric=metric, k=k)    
             duration = time.time() - start
             logging.info(f"{test_group}; {reference}; {k}; {p}; {z}; {s}; {duration:.6f}")
             results.append([test_group, reference, k, p, z, s, duration])
@@ -95,25 +94,23 @@ def evaluate(name, use_nx, group_by, ks=[5], sub_sample_size=1000, rank=False, m
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("run")
     parser.add_argument("dataset", type=str, choices=["schiebinger", "mcfarland", "norman", "sciplex_A549", "sciplex_K562", "sciplex_MCF7"])
-    parser.add_argument("use_nx", type=str, choices=["False", "True"])
     parser.add_argument("sub_sample_sizes", type=int)
 
     args = parser.parse_args()
     
-    use_nx = True if args.use_nx == "True" else False
     dataset = args.dataset
     sub_sample_size = args.sub_sample_sizes
-    print(dataset, use_nx)
+    print(dataset, args.sub_sample_sizes)
 
     if args.dataset == "schiebinger":
-        evaluate("schiebinger", use_nx=True, group_by="perturbation", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("schiebinger", group_by="perturbation", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
     elif args.dataset == "mcfarland":
-        evaluate("mcfarland", use_nx=True, group_by="perturbation", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("mcfarland", group_by="perturbation", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
     elif args.dataset == "norman":
-        evaluate("norman", use_nx=True, group_by="n_guides", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("norman", group_by="n_guides", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
     elif args.dataset == "sciplex_A549":
-        evaluate("sciplex_A549", use_nx=True, group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("sciplex_A549", group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
     elif args.dataset == "sciplex_K562":
-        evaluate("sciplex_K562", use_nx=True, group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("sciplex_K562", group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
     elif args.dataset == "sciplex_MCF7":
-        evaluate("sciplex_MCF7", use_nx=True, group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("sciplex_MCF7", group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
