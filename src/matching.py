@@ -54,6 +54,14 @@ def extract_matching(matching_map):
     for v in matching_map.get_array().nonzero()[0]:  # Only consider vertices with matches
         partner = matching_map[v]
         if partner != -1 and partner not in matched:
+            try:
+                v = v.item()
+            except:
+                pass
+            try: 
+                partner = partner.item()
+            except:
+                pass
             matching_list.append((v, partner))
             matched.add(v)
             matched.add(partner)
@@ -75,6 +83,8 @@ def construct_graph_from_distances(distances):
 def construct_graph_via_kNN(adata):
     distances = adata.obsp["distances"]
     max_dist = distances.max() 
+    print(np.any(np.isnan(distances.data)), np.any(distances.data < 0))  # Check for NaNs and negatives
+
 
     # only transform non-zero entries
     distances.data = max_dist + 1 - distances.data # transform so that weight minimization ~ weight maximization

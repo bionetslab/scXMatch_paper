@@ -26,8 +26,8 @@ def scanpy_setup(adata):
     return adata
 
 
-def evaluate(name, group_by, ks=[5], sub_sample_size=1000, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/"):
-    log_name = f"../evaluation_results/{name}_{method}_subsampled_{sub_sample_size}_log.txt"    
+def evaluate(name, group_by, ks=[2, 5, 10, 100, 500, None], rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/"):
+    log_name = f"../evaluation_results/{name}_log_gt_new.txt"    
     logging.basicConfig(
         filename=log_name,
         level=logging.INFO,
@@ -53,7 +53,7 @@ def evaluate(name, group_by, ks=[5], sub_sample_size=1000, rank=False, metric="s
         reference = "control"
         
     elif "sciplex" in name:
-        test_groups = [[10.0], [100.0], [1000.0], [10000.0]]
+        test_groups = [[10.0], [10000.0]]
         reference = 0.0
    
     elif "schiebinger" in name:
@@ -63,27 +63,12 @@ def evaluate(name, group_by, ks=[5], sub_sample_size=1000, rank=False, metric="s
         raise ValueError("Unknown dataset")
 
         
-    if sub_sample_size:
-        if len(adata[adata.obs[group_by] == reference]) > sub_sample_size:
-            reference_subset = sc.pp.subsample(adata[adata.obs[group_by] == reference], n_obs=sub_sample_size, copy=True)
-        else:
-            reference_subset = adata[adata.obs[group_by] == reference]
-
     results = list()
     for k in ks:
         for i, test_group in enumerate(test_groups):
-            if sub_sample_size:
-                if not isinstance(test_group, list):
-                    test_group = [test_group]
-                if len(adata[adata.obs[group_by].isin(test_group)]) > sub_sample_size:
-                    test_subset = sc.pp.subsample(adata[adata.obs[group_by].isin(test_group)], n_obs=sub_sample_size, copy=True)
-                else:
-                    test_subset = adata[adata.obs[group_by].isin(test_group)]
-                subset = ad.concat([reference_subset, test_subset])
-            else:
-                subset = adata
+            print(test_group)
             start = time.time()
-            p, z, s = rosenbaum(subset.copy(), group_by=group_by, reference=reference, test_group=test_group, rank=rank, metric=metric, k=k)    
+            p, z, s = rosenbaum(adata.copy(), group_by=group_by, reference=reference, test_group=test_group, rank=rank, metric=metric, k=k)    
             duration = time.time() - start
             logging.info(f"{test_group}; {reference}; {k}; {p}; {z}; {s}; {duration:.6f}")
             results.append([test_group, reference, k, p, z, s, duration])
@@ -94,23 +79,24 @@ def evaluate(name, group_by, ks=[5], sub_sample_size=1000, rank=False, metric="s
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("run")
     parser.add_argument("dataset", type=str, choices=["schiebinger", "mcfarland", "norman", "sciplex_A549", "sciplex_K562", "sciplex_MCF7"])
-    parser.add_argument("sub_sample_sizes", type=int)
 
     args = parser.parse_args()
     
     dataset = args.dataset
-    sub_sample_size = args.sub_sample_sizes
-    print(dataset, args.sub_sample_sizes)
+    print(dataset)
+
+    metric = "sqeuclidean"
+    data_path= "/mnt/data/"
 
     if args.dataset == "schiebinger":
-        evaluate("schiebinger", group_by="perturbation", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("schiebinger", group_by="perturbation", rank=False, metric=metric, data_path=data_path)
     elif args.dataset == "mcfarland":
-        evaluate("mcfarland", group_by="perturbation", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("mcfarland", group_by="perturbation", rank=False, metric=metric, data_path=data_path)
     elif args.dataset == "norman":
-        evaluate("norman", group_by="n_guides", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("norman", group_by="n_guides", rank=False, metric=metric, data_path=data_path)
     elif args.dataset == "sciplex_A549":
-        evaluate("sciplex_A549", group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("sciplex_A549", group_by="dose_value", rank=False, metric=metric, data_path=data_path)
     elif args.dataset == "sciplex_K562":
-        evaluate("sciplex_K562", group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("sciplex_K562", group_by="dose_value", rank=False, metric=metric, data_path=data_path)
     elif args.dataset == "sciplex_MCF7":
-        evaluate("sciplex_MCF7", group_by="dose_value", sub_sample_size=sub_sample_size, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/")
+        evaluate("sciplex_MCF7", group_by="dose_value", rank=False, metric=metric, data_path=data_path)

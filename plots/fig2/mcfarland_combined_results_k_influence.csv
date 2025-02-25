@@ -1,0 +1,13 @@
+,,100,783
+t_24,p-val,2.9738740718343925e-41,6.484627109332874e-40
+t_24,z-score,-12.946963144814484,-12.745061688084954
+t_24,relative support,1.0,1.0
+t_24,Jaccard similarity to reference matching,0.8360655737704918,1.0
+t_24,Percentage of reference matching edges in matching,0.9107142857142857,1.0
+t_24,Number of edges,63149.0,307720.0
+t_6,p-val,3.8205428848886843e-29,2.383434038647996e-31
+t_6,z-score,-10.927948577519176,-11.331751490978238
+t_6,relative support,1.0,1.0
+t_6,Jaccard similarity to reference matching,0.893719806763285,1.0
+t_6,Percentage of reference matching edges in matching,0.9438775510204082,1.0
+t_6,Number of edges,64657.0,307720.0

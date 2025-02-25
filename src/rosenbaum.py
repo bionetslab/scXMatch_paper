@@ -2,6 +2,7 @@ import numpy as np
 from math import comb, factorial, pow, log, exp
 import anndata as ad
 from scipy.stats import rankdata
+import scipy.sparse as sp
 from itertools import chain
 from src.matching import *
 import scanpy as sc
@@ -66,12 +67,13 @@ def rosenbaum_test(Z, matching, test_group):
 
 
 def kNN(adata, k, metric):
-    print("calculating PCA and kNN graph.")
-    sc.pp.pca(adata)
-    sc.pp.neighbors(adata, n_neighbors=k, metric=metric)
+    print("calculating kNN graph.")
+    if sp.issparse(adata.X):
+        adata.X = adata.X.toarray()  # Convert only if it's sparse
+    sc.pp.neighbors(adata, n_neighbors=k, metric=metric, n_pcs=0)
 
 
-def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean", rank=False, k=None):
+def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean", rank=False, k=None, return_matching=False):
     """
     Perform Rosenbaum's matching-based test for checking the association between two groups 
     using a distance-based matching approach.
@@ -160,9 +162,12 @@ def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean",
     num_samples = len(adata)
     if k:
         G = construct_graph_via_kNN(adata)
+
     else:
         distances = calculate_distances(adata.X, metric)
         G = construct_graph_from_distances(distances)
     matching = match(G, num_samples)
 
+    if return_matching:
+        return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group=test_group), G, matching
     return rosenbaum_test(Z=adata.obs[group_by], matching=matching, test_group=test_group)

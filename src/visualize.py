@@ -11,13 +11,6 @@ def draw_ellipse(ax, mean, cov, color):
     ellipse = Ellipse(mean, width=2*cov[0], height=2*cov[1], edgecolor=None, facecolor=color, alpha=0.4)
     ax.add_patch(ellipse)
 
-# Function to compute matching
-def get_matching(adata, test, reference):
-    distances = calculate_distances_nx(adata.X, "sqeuclidean")
-    G = construct_graph_from_distances_nx(distances)
-    matching = match_nx(G)
-    p_val, z, support = rosenbaum(adata, group_by="Group", test_group=test, reference=reference, use_nx=True)
-    return adata, matching, p_val, z, support
 
 # Function to plot matching
 def draw_matching(adata, matching, p_val, z, support, ax, group_colors):
