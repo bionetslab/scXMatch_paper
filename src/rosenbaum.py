@@ -6,7 +6,7 @@ import scipy.sparse as sp
 from itertools import chain
 from src.matching import *
 import scanpy as sc
-
+sc.settings.n_jobs=-1
 
 def cross_match_count(Z, matching, test_group):
     print("counting cross matches.")
