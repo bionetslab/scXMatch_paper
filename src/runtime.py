@@ -32,7 +32,6 @@ def run_test(k, n_obs, n_var, metric):
         if k < n_obs:
             kNN(adata, k, metric)
             t1 = time.time()
-            
             matching_gt = test_gt(adata, k, metric)
             t2 = time.time()
             logging.info(f"{k}; {n_obs}; {n_var}; {t1 - t0:.6f}; {t2 - t1:.6f}")
