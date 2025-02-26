@@ -39,7 +39,7 @@ cd /data/bionets/je30bery/singularity/gt/lib/python3.13/site-packages
 ```
 Create a symbolic link to the graph-tool installation inside the container:
 ```bash
-ln -s /usr/lib/python3.13/site-packages/graph_tool/ graph_tool
+ln -s /usr/lib/python3.13/site-packages/graph_tool/
 ```
 
 ## Step 6: Verify Installation
