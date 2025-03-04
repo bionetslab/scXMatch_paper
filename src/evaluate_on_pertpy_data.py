@@ -26,7 +26,7 @@ def scanpy_setup(adata):
     return adata
 
 
-def evaluate(name, group_by, ks=[2, 5, 10, 100, 500, None], rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/"):
+def evaluate(name, group_by, ks, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/"):
     log_name = f"../evaluation_results/{name}_log_gt_new.txt"    
     logging.basicConfig(
         filename=log_name,
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     elif args.dataset == "norman":
         evaluate("norman", group_by="n_guides", rank=False, metric=metric, data_path=data_path)
     elif args.dataset == "sciplex_A549":
-        evaluate("sciplex_A549", group_by="dose_value", rank=False, metric=metric, data_path=data_path)
+        evaluate("sciplex_A549", group_by="dose_value", ks=[5, 10, 20, 50], rank=False, metric=metric, data_path=data_path)
     elif args.dataset == "sciplex_K562":
         evaluate("sciplex_K562", group_by="dose_value", rank=False, metric=metric, data_path=data_path)
     elif args.dataset == "sciplex_MCF7":

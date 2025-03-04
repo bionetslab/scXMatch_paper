@@ -9,6 +9,7 @@ import sys
 sys.path.append("..")
 from src import *
 np.random.seed(42)
+sc._settings.ScanpyConfig.n_jobs = -1
 
 def subsample_adata(adata, group_by):
     min_count = adata.obs[group_by].value_counts().min()
@@ -118,9 +119,9 @@ def main(data_path = "/mnt/data", dataset='mcfarland.hdf5'):
     for group in groups:
         if group != reference:
             print(group)
-            dfs[group] = get_result_df(adata=adata, group_by=group_by, reference=reference, test_group=group, ks=[10000, 7500, 5000, 2500, 1000, 500, 100])
+            dfs[group] = get_result_df(adata=adata, group_by=group_by, reference=reference, test_group=group, ks=[5, 10, 20, 50, 100, 500, 1000])
             print(dfs)
-    pd.concat(dfs).to_csv(f"../plots/{name}_combined_results_k_influence.csv")
+    pd.concat(dfs).to_csv(f"../plots/{name}_combined_results_k_influence_k_small.csv")
 
     plot = False
     if plot:
@@ -164,4 +165,4 @@ def main(data_path = "/mnt/data", dataset='mcfarland.hdf5'):
         
                 
 if __name__ == "__main__":
-    main(data_path = "/mnt/data", dataset='sciplex_A549.hdf5')
+    main(data_path = "/mnt/data", dataset='sciplex_MCF7.hdf5')

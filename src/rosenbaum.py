@@ -70,7 +70,7 @@ def kNN(adata, k, metric):
     print("calculating kNN graph.")
     if sp.issparse(adata.X):
         adata.X = adata.X.toarray()  # Convert only if it's sparse
-    sc.pp.neighbors(adata, n_neighbors=k, metric=metric, n_pcs=0)
+    sc.pp.neighbors(adata, n_neighbors=k, metric=metric, n_pcs=0, transformer='pynndescent')
 
 
 def rosenbaum(adata, group_by, test_group, reference=None, metric="sqeuclidean", rank=False, k=None, return_matching=False):
