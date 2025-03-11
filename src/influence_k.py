@@ -99,10 +99,16 @@ def main(data_path = "/mnt/data", dataset='mcfarland.hdf5'):
         group_by = "dose_value"
         reference = 0.0
         name = "sciplex_K562"
+    elif "norman" in dataset:
+        adata.obs['n_guides'] = np.where(
+            adata.obs["perturbation"].str.contains("control"),
+            "control",  # If true, assign "control"
+            adata.obs["perturbation"].str.count("\+") + 1)    
+        reference = "control"
+        group_by = 'n_guides'
     
-    print(name)
     print(adata.obs[group_by].value_counts())
-    adata = subsample_adata(adata, group_by)
+    #adata = subsample_adata(adata, group_by)
     print(adata.obs[group_by].value_counts())
 
 
@@ -165,4 +171,4 @@ def main(data_path = "/mnt/data", dataset='mcfarland.hdf5'):
         
                 
 if __name__ == "__main__":
-    main(data_path = "/mnt/data", dataset='sciplex_MCF7.hdf5')
+    main(data_path = "/mnt/data", dataset='norman.hdf5')

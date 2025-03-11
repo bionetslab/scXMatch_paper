@@ -4,7 +4,7 @@ import logging
 import time
 import sys
 import anndata as ad
-sys.path.append("/home/woody/iwbn/iwbn007h/scXMatch")
+sys.path.append("..")
 from src import kNN, construct_graph_via_kNN, calculate_distances, construct_graph_from_distances, match
 
 # Simulate data with the same function
@@ -70,7 +70,9 @@ def main():
     else:
         n_obs_values = [50000, 100000]
     
-    n_var_values =  [2, 100, 1000, 2000, 5000]
+    n_var_values =  [2]
+    n_obs_values =[100]
+
 
     for n_obs in n_obs_values:
         print(n_obs)
