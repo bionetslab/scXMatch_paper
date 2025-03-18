@@ -56,7 +56,7 @@ def main(data_path = "/data_nfs/datasets/scrnaseq_ji"):
     adata = utils.scanpy_setup(adata)
 
     logging.basicConfig(
-        filename=f"../evaluation_results/sciplex_MCF7_matching_properties.txt",
+        filename=f"../evaluation_results/sciplex_MCF7_matching_properties_10000.txt",
         level=logging.INFO,
         format="%(message)s"
     )
@@ -64,17 +64,23 @@ def main(data_path = "/data_nfs/datasets/scrnaseq_ji"):
     logging.info(f"k, ref, test, p, z, s, cost, #edges, #nodes")
 
     adata.obs[group_by] = adata.obs[group_by].astype('category')
-    groups = list(adata.obs[group_by].unique())
+    groups = [10000] # sorted(list(adata.obs[group_by].unique()))
 
     for group in groups:
         if group != reference:
             subset = adata[adata.obs[group_by].isin([reference, group])]
+            if group == 10000:
+                print("group", group)
+                subsample_sizes=[10000, 20000, 50000, None]
+            else:
+                subsample_sizes=[100, 500, 1000, 2500, 5000, 10000, 20000, 50000, None]
+
             run_tests(adata=subset, 
                       group_by=group_by, 
                       reference=reference, 
                       test_group=group, 
-                      ks=[5, 10, 20, 50, 100, 500, 1000], 
-                      subsample_sizes=[100, 500, 1000, 2500, 5000, 10000, 20000, 50000, None])
+                      ks=[5, 10, 20, 50, 100, 500, 1000, 5000], 
+                      subsample_sizes=subsample_sizes)
 
                 
 if __name__ == "__main__":
