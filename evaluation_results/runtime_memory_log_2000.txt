@@ -1,65 +1,32 @@
 k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
 10,2000,2000,20486,23.021988,0.096300,160.67,164.46
 10,2000,1000,20332,23.071604,0.097613,162.86,164.71
 10,2000,500,20317,23.098977,0.103329,163.47,166.32
 10,2000,10,17007,23.146666,0.152997,163.68,167.41
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
 20,2000,1000,37363,23.157074,0.122180,155.84,159.77
 20,2000,500,37337,23.185557,0.120548,166.09,169.69
 20,2000,10,31705,23.216781,0.172796,163.61,166.26
 20,2000,2000,37927,23.200744,0.107425,148.45,151.03
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
 50,2000,1000,86340,23.673859,0.169368,160.40,167.52
 50,2000,2000,86739,23.625077,0.168171,143.16,150.41
 50,2000,500,85959,23.697718,0.177954,162.71,170.75
 50,2000,10,75645,23.739816,0.213742,175.71,177.55
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
 100,2000,500,164742,23.889709,0.214931,181.08,185.88
 100,2000,1000,164434,23.874983,0.232787,171.43,180.64
 100,2000,10,148058,23.927952,0.251782,172.79,182.71
 100,2000,2000,164619,24.019470,0.202582,161.96,166.61
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
 200,2000,500,311426,24.733312,0.352303,186.35,193.92
 200,2000,10,287695,24.751767,0.368861,252.22,255.28
 200,2000,1000,312096,24.698426,0.375490,208.75,210.82
 200,2000,2000,312142,24.957859,0.320438,187.93,190.68
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
 500,2000,1000,707957,26.567916,0.730426,195.77,198.86
 500,2000,10,685707,26.708494,0.696499,229.72,260.39
 500,2000,500,708334,26.602510,0.780238,229.36,228.43
 500,2000,2000,714353,26.603329,0.713136,200.13,180.04
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
 1000,2000,500,1268886,30.495891,1.160960,296.63,325.40
 1000,2000,1000,1270644,30.795930,1.147801,294.10,318.80
 1000,2000,2000,1268899,30.897663,1.193194,245.97,249.29
 1000,2000,10,1268885,31.019031,1.223547,299.43,330.68
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
 None,2000,10,2001000,0,1.488804,0,94.11
 None,2000,500,2001000,0,2.316414,0,3.17
 None,2000,1000,2001000,0,3.045601,0,166.89
