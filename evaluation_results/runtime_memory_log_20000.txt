@@ -63,3 +63,13 @@ None,20000,10,200010000,0,944.789909,0,7642.34 MB
 5000,20000,500,70590978,1467.045014,155.843055,2889.24 MB,2892.36 MB
 5000,20000,1000,70888756,1522.331493,165.893631,2695.03 MB,2698.34 MB
 5000,20000,10,68242391,1441.968891,308.179259,2454.12 MB,3146.63 MB
+k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
+10,20000,10,167693,24.924934,29.497959,283.79 MB,287.14 MB
+k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
+k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
+k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
+k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
+20,20000,10,315174,28.816728,25.347605,289.10 MB,295.27 MB
+50,20000,10,760194,29.330358,32.223491,447.84 MB,462.54 MB
+200,20000,2000,3540980,54.323918,22.966208,1232.50 MB,1235.12 MB
+500,20000,1000,8442892,80.837262,32.243161,1407.59 MB,1410.72 MB

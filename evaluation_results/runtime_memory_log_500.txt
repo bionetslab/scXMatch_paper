@@ -52,3 +52,5 @@ k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [
 None,500,10,125250,0,0.065373,0,19.86 MB
 k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
 None,500,1000,125250,0,0.152521,0,3.20 MB
+k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
+None,500,500,125250,0,0.141135,0,10.88 MB
