@@ -15,11 +15,10 @@ def simulate_data(n_obs, n_var):
     return adata
 
 # Test ground truth function
-def test_gt(adata, k, metric):
+def test_gt(adata, k, metric, distances=None):
     if k:
         G = construct_graph_via_kNN(adata)
     else:
-        distances = calculate_distances(adata.X, metric)
         G = construct_graph_from_distances(distances)
     matching = match(G, len(adata))
     num_edges = len(G.get_edges())
@@ -28,9 +27,9 @@ def test_gt(adata, k, metric):
 # Run the benchmarking test
 def run_test(k, n_obs, n_var, metric):
     process = psutil.Process()
+    start_mem = process.memory_info().rss  # Initial memory usage
 
     adata = simulate_data(n_obs, n_var)
-    start_mem = process.memory_info().rss  # Initial memory usage
 
     if k:
         if k < n_obs:
@@ -46,11 +45,14 @@ def run_test(k, n_obs, n_var, metric):
         else:
             print(f"skipped {k} {n_obs}")
     else:
+        t0 = time.time()
+        distances = calculate_distances(adata.X, metric)
         t1 = time.time()
-        matching_gt, n_edges  = test_gt(adata, k, metric)
+        peak_mem = process.memory_info().rss  # Memory after kNN
+        matching_gt, n_edges  = test_gt(adata, k, metric, distances)
         t2 = time.time()
         peak_mem_matching = process.memory_info().rss  # Memory after matching
-        logging.info(f"None,{n_obs},{n_var},{n_edges},0,{t2 - t1:.6f},0,{(peak_mem_matching - start_mem) / (1024 * 1024):.2f} MB")
+        logging.info(f"None,{n_obs},{n_var},{n_edges},{t1 - t0:.6f},{t2 - t1:.6f},{(peak_mem - start_mem) / (1024 * 1024):.2f} MB,{(peak_mem_matching - start_mem) / (1024 * 1024):.2f} MB")
 
 def main():
     k = int(sys.argv[1])
