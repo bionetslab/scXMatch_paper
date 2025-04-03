@@ -39,8 +39,9 @@ def run_test(k, n_obs, n_var, metric):
             peak_mem = process.memory_info().rss  # Memory after kNN
             matching_gt, n_edges = test_gt(adata, k, metric)
             t2 = time.time()
-            peak_mem_matching = process.memory_info().rss  # Memory after matching
-            logging.info(f"{k},{n_obs},{n_var},{n_edges},{t1 - t0:.6f},{t2 - t1:.6f},{(peak_mem - start_mem) / (1024 * 1024):.2f} MB,{(peak_mem_matching - start_mem) / (1024 * 1024):.2f} MB")
+            peak_mem_matching = process.memory_info().rss  # Memory after matching  
+            s = len(matching_gt) * 2 / len(adata)
+            logging.info(f"{k},{n_obs},{n_var},{n_edges},{t1 - t0:.6f},{t2 - t1:.6f},{(peak_mem - start_mem) / (1024 * 1024):.2f} MB,{(peak_mem_matching - start_mem) / (1024 * 1024):.2f} MB,{s}")
             
         else:
             print(f"skipped {k} {n_obs}")
@@ -72,7 +73,7 @@ def main():
         level=logging.INFO,
         format="%(message)s"
     )
-    logging.info(f"k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching")
+    logging.info(f"k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching,s")
     metric = "sqeuclidean"
     run_test(k, n_obs, n_var, metric)
 
