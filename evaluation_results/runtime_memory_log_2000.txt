@@ -1,4 +1,4 @@
-k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching
+k,n_obs,n_var,n_edges,t_NN [s],t_matching [s],Peak Memory [MB] kNN,Peak Memory [MB] matching,s
 10,2000,10,16870,23.348529,0.151152,162.87,166.19,1.0
 10,2000,1000,20282,23.147186,0.103578,194.87,197.88,0.954
 10,2000,500,20355,23.162415,0.111944,180.23,182.65,0.952
