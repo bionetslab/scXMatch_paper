@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.special import comb
+from scipy.stats import iqr
+
 
 def monotonicity(s, smaller_is_stronger=False):
     """
@@ -41,7 +43,7 @@ def robustness(s):
     """
     assert s.shape[0] == s.shape[1]
     if np.max(s) != np.min(s):
-        return 1 / (np.std((s - np.min(s))/(np.max(s) - np.min(s))) ** 2)
+        return 1 / (np.std((s - np.median(s))/iqr(s)) ** 2)
     return np.inf
 
 
@@ -60,20 +62,18 @@ def tests():
     s = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
     print(robustness(s)) #inf (most likely never going to happen, just for completeness)
         
-    s = np.array([[1, 1, 1], [1, 1, 4], [1, 1, 1]])
-    print(robustness(s)) #10.12
-    # multiply by 10
-    s = np.array([[10, 10, 10], [10, 10, 14], [10, 10, 10]])
-    print(robustness(s)) #10.12
-    # replace 14 by 40
-    s = np.array([[10, 10, 10], [10, 10, 40], [10, 10, 10]])
-    print(robustness(s)) #10.12
-    # change 1 other value
-    s = np.array([[10, 10, 10], [10, 10, 40], [20, 10, 10]])
-    print(robustness(s)) #9.85
-    # set 1 value to a really high-fold number compared to the others
-    s = np.array([[10, 10, 98], [10, 10, 40], [20, 10, 10]])
-    print(robustness(s)) #10.06
+    s = np.array([[1, 2, 3], [5, 6, 7], [8, 9, 10]])
+    print(robustness(s)) #2.8
+
+    s *= 10
+    print(robustness(s)) #2.8
+
+    s[2] = 90
+    print(robustness(s)) #4.1
+
+    s[2] = 2000
+    print(robustness(s)) #4.5
+
 
     
 if __name__ == "__main__":
