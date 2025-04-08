@@ -4,15 +4,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd 
 import os
+import scanpy as sc
 import seaborn as sns
 from scipy.stats import mannwhitneyu
 from statsmodels.stats.multitest import multipletests
 from sklearn.neighbors import LocalOutlierFactor
 import string
+from itertools import chain
 
 import sys
-sys.path.append("../../scxmatch/src")
-from scxmatch import *
+sys.path.append("../../scxmatch/")
+from src import *
+
+
+def scanpy_setup(adata):
+    if 'counts' in adata.layers:
+        adata.X = adata.layers['counts'].copy()
+    else:
+        adata.layers['counts'] = adata.X.copy()
+    #sc.pp.normalize_total(adata, target_sum=1e6, exclude_highly_expressed=True)
+    sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(adata, n_top_genes=2000)
+    adata = adata[:, adata.var.highly_variable]
+    adata.obs_names_make_unique()
+    adata.var_names_make_unique()
+    return adata
 
 
 def main():
@@ -21,9 +37,10 @@ def main():
     group_by = "dose_value"
 
     outlier_dfs = list()
-    data_path = "/data_nfs/datasets/scrnaseq_ji/"
-    datasets = ["sciplex_A549.hdf5", "sciplex_MCF7.hdf5", "sciplex_K562.hdf5"]
+    data_path = "/home/woody/iwbn/iwbn007h/data/scrnaseq_ji"
+    datasets = ["sciplex_MCF7.hdf5"] # , "sciplex_MCF7.hdf5", "sciplex_K562.hdf5"
     for i, dataset in enumerate(datasets): 
+        print(dataset)
         adata = read_h5ad(os.path.join(data_path, dataset))    
         adata = scanpy_setup(adata)
     
@@ -32,6 +49,7 @@ def main():
         
         dfs = dict()
         for test_group in groups:
+            print(test_group)
             if test_group == reference:
                 continue
             
@@ -53,6 +71,7 @@ def main():
             outliers["in matching"] = False
             outliers.iloc[used_elements, 1] = True
             dfs[test_group] = outliers
+            outliers.to_csv(f"{dataset}_{test_group}_outlier.csv")
         df = pd.concat(dfs).reset_index().rename({"level_0": "Test group"}, axis=1)
         df.to_csv(f"{dataset}_outlier.csv")
         outlier_dfs.append(df)

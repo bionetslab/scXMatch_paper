@@ -1,0 +1,81 @@
+### Starting TaskPrologue of job 501891 on tf063 at Mon 07 Apr 2025 05:49:58 PM CEST
+Running on cores 0-31,64-95 with governor ondemand
+No GPU known
+### Finished TaskPrologue
+
+/home/woody/iwbn/iwbn007h/scXMatch_paper/src/../../scxmatch/src/scxmatch/rosenbaum.py:153: ImplicitModificationWarning: Trying to modify attribute `.obs` of view, initializing view as actual.
+  adata.obs["XMatch_group"] = np.where(adata.obs[group_by].isin(test_group), "test", "reference")
+/home/woody/iwbn/iwbn007h/scXMatch_paper/src/../../scxmatch/src/scxmatch/rosenbaum.py:153: ImplicitModificationWarning: Trying to modify attribute `.obs` of view, initializing view as actual.
+  adata.obs["XMatch_group"] = np.where(adata.obs[group_by].isin(test_group), "test", "reference")
+/home/woody/iwbn/iwbn007h/scXMatch_paper/src/../../scxmatch/src/scxmatch/rosenbaum.py:153: ImplicitModificationWarning: Trying to modify attribute `.obs` of view, initializing view as actual.
+  adata.obs["XMatch_group"] = np.where(adata.obs[group_by].isin(test_group), "test", "reference")
+/home/woody/iwbn/iwbn007h/scXMatch_paper/src/../../scxmatch/src/scxmatch/rosenbaum.py:153: ImplicitModificationWarning: Trying to modify attribute `.obs` of view, initializing view as actual.
+  adata.obs["XMatch_group"] = np.where(adata.obs[group_by].isin(test_group), "test", "reference")
+will use the CPU to calculate the distance matrix.
+sciplex_MCF7.hdf5
+10000.0
+XMatch_group
+test         76842
+reference     7784
+Name: count, dtype: int64
+calculating kNN graph.
+counting cross matches.
+10.0
+XMatch_group
+test         91533
+reference     7784
+Name: count, dtype: int64
+calculating kNN graph.
+counting cross matches.
+1000.0
+XMatch_group
+test         81205
+reference     7784
+Name: count, dtype: int64
+calculating kNN graph.
+counting cross matches.
+100.0
+XMatch_group
+test         87406
+reference     7784
+Name: count, dtype: int64
+calculating kNN graph.
+counting cross matches.
+0.0
+Traceback (most recent call last):
+  File "/home/woody/iwbn/iwbn007h/scXMatch_paper/src/nlof.py", line 115, in <module>
+    main()
+  File "/home/woody/iwbn/iwbn007h/scXMatch_paper/src/nlof.py", line 96, in main
+    sns.violinplot(df, y="Negative local outlier factor", hue="in matching", x="Test group", cut=0, split=True, palette="magma", ax=axs[i], legend=legend)
+  File "/home/woody/iwbn/iwbn007h/software/private/conda/envs/gt/lib/python3.9/site-packages/seaborn/categorical.py", line 1725, in violinplot
+    p = _CategoricalPlotter(
+  File "/home/woody/iwbn/iwbn007h/software/private/conda/envs/gt/lib/python3.9/site-packages/seaborn/categorical.py", line 67, in __init__
+    super().__init__(data=data, variables=variables)
+  File "/home/woody/iwbn/iwbn007h/software/private/conda/envs/gt/lib/python3.9/site-packages/seaborn/_base.py", line 634, in __init__
+    self.assign_variables(data, variables)
+  File "/home/woody/iwbn/iwbn007h/software/private/conda/envs/gt/lib/python3.9/site-packages/seaborn/_base.py", line 679, in assign_variables
+    plot_data = PlotData(data, variables)
+  File "/home/woody/iwbn/iwbn007h/software/private/conda/envs/gt/lib/python3.9/site-packages/seaborn/_core/data.py", line 58, in __init__
+    frame, names, ids = self._assign_variables(data, variables)
+  File "/home/woody/iwbn/iwbn007h/software/private/conda/envs/gt/lib/python3.9/site-packages/seaborn/_core/data.py", line 232, in _assign_variables
+    raise ValueError(err)
+ValueError: Could not interpret value `Negative local outlier factor` for `y`. An entry with this name does not appear in `data`.
+=== JOB_STATISTICS ===
+=== current date     : Tue 08 Apr 2025 02:56:32 AM CEST
+= Job-ID             : 501891 on tinyfat
+= Job-Name           : MCF7
+= Job-Command        : /home/woody/iwbn/iwbn007h/scXMatch_paper/nlof_jobs/job.sh
+= Initial workdir    : /home/woody/iwbn/iwbn007h/scXMatch_paper/nlof_jobs
+= Queue/Partition    : work
+= Slurm account      : iwbn with QOS=normal
+= Requested resources:  for 12:00:00
+= Elapsed runtime    : 09:06:37
+= Total RAM usage    : 215.3 GiB of requested  GiB (%)   
+= Node list          : tf063
+= Subm/Elig/Start/End: 2025-04-07T12:43:49 / 2025-04-07T12:43:49 / 2025-04-07T17:49:55 / 2025-04-08T02:56:32
+======================
+=== Quota infos ======
+    Path              Used     SoftQ    HardQ    Gracetime  Filec    FileQ    FiHaQ    FileGrace    
+    /home/hpc           26.1G   104.9G   209.7G        N/A      61K     500K   1,000K        N/A    
+    /home/woody        366.7G  1000.0G  1500.0G        N/A     394K   5,000K   7,500K        N/A    
+======================
