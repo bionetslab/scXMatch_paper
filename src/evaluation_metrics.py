@@ -8,6 +8,7 @@ def monotonicity(s, smaller_is_stronger=False):
     """
     expects a 1D array of scores sorted by biological perturbation strength! 
     """
+    #TODO round to 2 significant decimals here
     L = len(s)
     result = 0
     for l in range(L):
@@ -26,6 +27,7 @@ def SSNR(s_0, s, smaller_is_stronger=False):
         subsets within the group l
         - the 1D array needs to be in the same order as the layers of the 3D array!
     """
+    # TODO round to 2 significant decimals here
     assert len(s_0) == s.shape[0]
     L = len(s_0)
     result = 0
@@ -46,7 +48,6 @@ def robustness(s):
     if np.max(s) != np.min(s):
         return 1 / median_abs_deviation((s - np.median(s)) / iqr(s), axis=None)
     return np.inf
-
 
 
 def tests():
