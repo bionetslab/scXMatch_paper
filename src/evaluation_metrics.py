@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.special import comb
 from scipy.stats import iqr
+from scipy.stats import median_abs_deviation
 
 
 def monotonicity(s, smaller_is_stronger=False):
@@ -43,8 +44,9 @@ def robustness(s):
     """
     assert s.shape[0] == s.shape[1]
     if np.max(s) != np.min(s):
-        return 1 / (np.std((s - np.median(s))/iqr(s)) ** 2)
+        return 1 / median_abs_deviation((s - np.median(s)) / iqr(s), axis=None)
     return np.inf
+
 
 
 def tests():
@@ -68,10 +70,11 @@ def tests():
     s *= 10
     print(robustness(s)) #2.8
 
-    s[2] = 90
+    s[0, 2] = 90
+    print(s)
     print(robustness(s)) #4.1
-
-    s[2] = 2000
+    s[0, 2] = 2000
+    print(s)
     print(robustness(s)) #4.5
 
 
