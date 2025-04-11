@@ -3,12 +3,20 @@ from scipy.special import comb
 from scipy.stats import iqr
 from scipy.stats import median_abs_deviation
 
+def round_sig(x, sig=2):
+    return round(x, -int(np.floor(np.log10(abs(x)))) + (sig - 1))
+
 
 def monotonicity(s, smaller_is_stronger=False):
     """
-    expects a 1D array of scores sorted by biological perturbation strength! 
+    Expects a 1D Series or array of scores sorted by biological perturbation strength.
+    Returns a monotonicity score between 0 and 1.
     """
-    #TODO round to 2 significant decimals here
+    print(s)
+    f = np.vectorize(round_sig)
+    s = f(s.values)  # round to 2 significant decimal place
+    print(s)
+
     L = len(s)
     result = 0
     for l in range(L):
