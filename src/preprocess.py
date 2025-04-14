@@ -1,18 +1,16 @@
-import pertpy as pt
 import scanpy as sc
 import anndata as ad
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import sys
-
+import os
+from tqdm import tqdm
 
 def scanpy_setup(adata):
     if 'counts' in adata.layers:
         adata.X = adata.layers['counts'].copy()
     else:
         adata.layers['counts'] = adata.X.copy()
-    #sc.pp.normalize_total(adata, target_sum=1e6, exclude_highly_expressed=True)
     sc.pp.log1p(adata)
     sc.pp.highly_variable_genes(adata, n_top_genes=2000)
     adata = adata[:, adata.var.highly_variable]
@@ -96,25 +94,32 @@ def assign_pseudo_bulks_and_splits(adata, group_by):
 
 
 def pre_process_all(dataset_path):
-    names = [f for f in os.listdir(dataset_path) if f.endswith("hdf5")]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and "norman" in f)]
     files = [os.path.join(dataset_path, f) for f in names]
     
-    for n, f in zip(names, files):
+    for n, f in tqdm(zip(names, files)):
         adata = ad.read_h5ad(f)
         adata = scanpy_setup(adata)
         
-        if name == "mcfarland":
+        if "mcfarland" in n:
             group_by = "perturbation_grouped"
             adata.obs[group_by] = adata.obs['perturbation'].apply(lambda x: x.split("_")[-1])
-        elif name == "norman":
+        elif "norman" in n:
             group_by = "n_guides"
-        elif "sciplex" in name:
+            adata.obs['n_guides'] = np.where(
+            adata.obs["perturbation"].str.contains("control"),
+                                "control",  # If true, assign "control"
+                                adata.obs["perturbation"].str.count("\+") + 1)    
+        elif "sciplex" in n:
             group_by = "dose_value"
-        elif "schiebinger" in name:
+        elif "schiebinger" in n:
             group_by = "perturbation"
         else:
             raise ValueError("Unknown dataset")
         
         adata = assign_pseudo_bulks_and_splits(adata, group_by)
-        ad.write_h5ad(adata, f"{dataset_path}/processed_{n}")
+        adata.write_h5ad(f"{dataset_path}/processed_{n}")
     
+    
+if __name__ == "__main__":
+    pre_process_all("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji")

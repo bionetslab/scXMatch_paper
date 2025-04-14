@@ -12,47 +12,13 @@ from anndata import read_h5ad
 import faulthandler
 import argparse
 faulthandler.enable()
-
+from SSNR_on_pertpy_data import prepare
 
 def evaluate(name, group_by, k, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/"):
-    log_name = f"../evaluation_results/{name}_results.txt"    
-    logging.basicConfig(
-        filename=log_name,
-        level=logging.INFO,
-        format="%(message)s"
-    )
-    logging.info(f"test_group,reference,k,p,z,s")
-
-    file_name = os.path.join(data_path, f"{name}.hdf5")
-    adata = read_h5ad(file_name)
-    adata = scanpy_setup(adata)
-
-    if name == "mcfarland":
-        g6 = list(np.unique([v for v in adata.obs["perturbation"].values if v.endswith("_6")]))
-        g24 = list(np.unique([v for v in adata.obs["perturbation"].values if v.endswith("_24")]))
-        test_groups = [g6, g24]
-        reference = "control"
-        
-    elif name == "norman":
-        adata.obs['n_guides'] = np.where(
-            adata.obs["perturbation"].str.contains("control"),
-            "control",  # If true, assign "control"
-            adata.obs["perturbation"].str.count("\+") + 1)    
-        test_groups = [["1"], ["2"]]
-        reference = "control"
-        
-    elif "sciplex" in name:
-        test_groups = [[10.0], [100.0], [1000.0],[10000.0]]
-        reference = 0.0
-   
-    elif "schiebinger" in name:
-        test_groups = ['D1.5', 'D2', 'D2.5', 'D3', 'D3.5', 'D4', 'D4.5', 'D5', 'D5.5', 'D6', 'D6.5', 'D7', 'D7.5', 'D8', 'D8.5', 'D9', 'D9.5', 'D10', 'D10.5', 'D11', 'D11.5', 'D12', 'D12.5', 'D13', 'D13.5', 'D14', 'D14.5', 'D15', 'D15.5', 'D16', 'D16.5', 'D17', 'D17.5', 'D18']
-        reference = "control"
-    else:
-        raise ValueError("Unknown dataset")
-
-        
-    for i, test_group in enumerate(test_groups):
+    adata, group_by, reference, groups = prepare(data_path, name, result_path="../evaluation_results/1_1_monotonicity_scxmatch/")        
+    for i, test_group in enumerate(groups):
+        if test_group == reference:
+            continue
         p, z, s = rosenbaum(adata.copy(), group_by=group_by, reference=reference, test_group=test_group, rank=rank, metric=metric, k=k)    
         logging.info(f"{test_group},{reference},{k},{p},{z},{s}")
     return 
@@ -64,7 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("dataset", type=str, choices=["schiebinger", "mcfarland", "norman", "sciplex_A549", "sciplex_K562", "sciplex_MCF7"])
     args = parser.parse_args()
     
-    dataset = args.dataset
+    dataset = "schiebinger"
     metric = "sqeuclidean"
     data_path= "/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"
 
