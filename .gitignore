@@ -1,0 +1,12 @@
+jobs/
+notebooks/
+plots/
+R_src/
+result_jobs/
+runtime_jobs/
+tests/
+nlof_jobs/
+preprocess_jobs/
+benchmarking_jobs/
+*single_files/*
+*single_files/*
