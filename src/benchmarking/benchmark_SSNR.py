@@ -30,22 +30,24 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji"):
             
         elif "schiebinger" in f:
             group_by = "perturbation"
-            reference = "control"
+            reference = "control"            
+        elif "bhatta" in f:
+            print("HUHUHUHUUHU")
+            group_by = "ori_label"
+            adata.obs.rename({"label": "ori_label"}, axis=1, inplace=True)
+            print(adata.obs["ori_label"].value_counts())
+            reference = "Maintenance_Cocaine"
+            
             
         else:
             raise ValueError("Unknown dataset")
         
         print("reading", f)
-        adata = ad.read_h5ad(f)
         adata.obs[group_by] = adata.obs[group_by].astype(str)
         
         groups = adata.obs[group_by].unique()
         
         for test_group in groups:
-            if test_group in ["D2", "D8.5", "D9", "D10.5", "D15"]:
-                continue
-            if test_group in ["24"]:
-                continue
             if test_group == reference:
                 continue
             subset = adata[adata.obs[group_by].isin([test_group]), :].copy()

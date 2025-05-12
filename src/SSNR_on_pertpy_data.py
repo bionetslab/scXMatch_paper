@@ -20,7 +20,11 @@ def prepare(data_path, name, result_path=f"../evaluation_results/1_2_SSNR_scxmat
         format="%(message)s"
     )
 
-    file_name = os.path.join(data_path, f"{name}.hdf5")
+    if "hdf5" not in name:
+        file_name = os.path.join(data_path, f"{name}.hdf5")
+    else:
+        file_name = os.path.join(data_path, name)
+
     adata = read_h5ad(file_name)
 
     if "mcfarland" in name:
@@ -38,9 +42,14 @@ def prepare(data_path, name, result_path=f"../evaluation_results/1_2_SSNR_scxmat
     elif "schiebinger" in name:
         group_by = "perturbation"
         reference = "control"
+    
+    elif "bhattacherjee" in name:
+        group_by = "label"
+        reference = "Maintenance_Cocaine"
         
     else:
-        raise ValueError("Unknown dataset")
+        group_by = "perturbation"
+        reference = "control"
 
     adata.obs[group_by] = adata.obs[group_by].astype(str)
     groups = adata.obs[group_by].unique()
@@ -51,10 +60,8 @@ def evaluate(name, group_by, k, rank=False, metric="sqeuclidean", data_path="/da
     adata, group_by, reference, groups = prepare(data_path, name)  
     
     for test_group in groups:
-        if (test_group != "100.0"):
-            continue
         subset = adata[adata.obs[group_by].isin([test_group]), :].copy()
-        for group_by_split in ["split_1", "split_50"]: #"split_10", "split_30", 
+        for group_by_split in ["split_50", "split_10", "split_30"]:
             subset.obs[group_by_split] = subset.obs[group_by_split].astype(str)
             try:
                 p, z, s = rosenbaum(subset, group_by=group_by_split, reference="0.0", test_group="1.0", rank=rank, metric=metric, k=k)    
@@ -64,10 +71,16 @@ def evaluate(name, group_by, k, rank=False, metric="sqeuclidean", data_path="/da
     return 
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("run")
-    parser.add_argument("dataset", type=str, choices=["schiebinger", "mcfarland", "norman", "sciplex_A549", "sciplex_K562", "sciplex_MCF7"])
+    parser.add_argument("dataset", type=str, choices=["schiebinger", "mcfarland", "norman", "sciplex_A549", "sciplex_K562", "sciplex_MCF7", 'bhattacherjee',
+                                                      "LSI_Liscovitch-BrauerSanjana2021_K562_2.hdf5", "LSI_PierceGreenleaf2021_K562.hdf5", 
+                                                      "LSI_MimitouSmibert2021.hdf5", "LSI_PierceGreenleaf2021_MCF7.hdf5", "LSI_PierceGreenleaf2021_GM12878.hdf5", 
+                                                      "LSI_Liscovitch-BrauerSanjana2021_K562_1.hdf5", "processed_PierceGreenleaf2021_GM12878.hdf5", 
+                                                      "processed_Liscovitch-BrauerSanjana2021_K562_1.hdf5", "processed_PierceGreenleaf2021_K562.hdf5", 
+                                                      "processed_Liscovitch-BrauerSanjana2021_K562_2.hdf5", "processed_MimitouSmibert2021.hdf5", "processed_PierceGreenleaf2021_MCF7.hdf5"])
+    
+                                                       
     args = parser.parse_args()
     
     dataset = args.dataset
@@ -87,3 +100,10 @@ if __name__ == "__main__":
         evaluate("processed_sciplex_K562", group_by="dose_value", rank=False, metric=metric, data_path=data_path, k=k)
     elif args.dataset == "sciplex_MCF7":
         evaluate("processed_sciplex_MCF7", group_by="dose_value", rank=False, metric=metric, data_path=data_path, k=k)
+    elif args.dataset == "bhattacherjee":
+        print("BHATTACHERJEE")
+        evaluate("processed_bhattacherjee_excitatory", group_by="label", rank=False, metric=metric, data_path=data_path, k=k)
+    elif "LSI" in args.dataset:
+        evaluate(args.dataset, group_by="perturbation", rank=False, metric="euclidean", data_path=data_path, k=k)
+    else:
+        evaluate(args.dataset, group_by="perturbation", rank=False, metric="sqeuclidean", data_path=data_path, k=k)

@@ -30,7 +30,11 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji"):
             
         elif "schiebinger" in f:
             group_by = "perturbation"
-            reference = "control"
+            reference = "control"            
+        elif "bhatta" in f:
+            group_by = "label"
+            reference = "Maintenance_Cocaine"
+            
             
         else:
             raise ValueError("Unknown dataset")
@@ -52,7 +56,7 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji"):
                         print(adata[list(subset_1) + list(subset_2)].obs[group_by].value_counts())
                         results = benchmark_all(adata[list(subset_1) + list(subset_2)], group_by, reference=reference)
                         results_df = pd.DataFrame(results)
-                        results_df.to_csv(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_3_var_scxmatch/benchmark_results_{os.path.basename(f)}_{test_group}_{group_by_split}_ref_{group_by_split_reference}.csv", index=True)
+                        results_df.to_csv(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_3_var_benchmark/benchmark_results_{os.path.basename(f)}_{test_group}_{group_by_split}_ref_{group_by_split_reference}.csv", index=True)
                     except:
                         continue
                 

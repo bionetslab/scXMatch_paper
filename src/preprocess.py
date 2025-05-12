@@ -94,9 +94,10 @@ def assign_pseudo_bulks_and_splits(adata, group_by):
 
 
 def pre_process_all(dataset_path):
-    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and "norman" in f)]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and "bhatta" in f)]
     files = [os.path.join(dataset_path, f) for f in names]
     
+    print(names)
     for n, f in tqdm(zip(names, files)):
         adata = ad.read_h5ad(f)
         adata = scanpy_setup(adata)
@@ -114,6 +115,8 @@ def pre_process_all(dataset_path):
             group_by = "dose_value"
         elif "schiebinger" in n:
             group_by = "perturbation"
+        elif "bhattacherjee" in n:
+            group_by = "label"
         else:
             raise ValueError("Unknown dataset")
         
@@ -122,4 +125,4 @@ def pre_process_all(dataset_path):
     
     
 if __name__ == "__main__":
-    pre_process_all("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji")
+    pre_process_all("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/raw")
