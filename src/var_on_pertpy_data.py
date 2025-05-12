@@ -14,14 +14,14 @@ from SSNR_on_pertpy_data import prepare
 
 
 def evaluate(name, group_by, k, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/"):
-    adata, group_by, reference, groups = prepare(data_path, name, "../evaluation_results/1_3_var_scxmatch_actually")  
+    adata, group_by, reference, groups = prepare(data_path, name, "../evaluation_results/2_1_monotonicity_scxmatch/")  
     logging.info(f"test_group,group_by_split,group_by_split_reference,k,p,z,s")  
     for test_group in groups:
         if test_group == reference:
             continue
-        for group_by_split in ["split_10", "split_30", "split_50", "split_1"]:
+        for group_by_split in ["split_10", "split_30", "split_50"]:
             subset_1 = adata[( (adata.obs[group_by] == test_group) & (adata.obs[group_by_split] == 1) ), :].obs.index
-            for group_by_split_reference in ["split_10", "split_30", "split_50", "split_1"]:
+            for group_by_split_reference in ["split_10", "split_30", "split_50"]:
                 try:
                     subset_2 = adata[( (adata.obs[group_by] == reference) & (adata.obs[group_by_split_reference] == 1) ), :].obs.index
                     p, z, s = rosenbaum(adata[list(subset_1) + list(subset_2)], group_by=group_by, reference=reference, test_group=test_group, rank=rank, metric=metric, k=k)    
@@ -34,7 +34,12 @@ def evaluate(name, group_by, k, rank=False, metric="sqeuclidean", data_path="/da
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("run")
-    parser.add_argument("dataset", type=str, choices=["schiebinger", "mcfarland", "norman", "sciplex_A549", "sciplex_K562", "sciplex_MCF7"])
+    parser.add_argument("dataset", type=str, choices=["schiebinger", "mcfarland", "norman", "sciplex_A549", "sciplex_K562", "sciplex_MCF7", 'bhattacherjee',
+                                                      "LSI_Liscovitch-BrauerSanjana2021_K562_2.hdf5", "LSI_PierceGreenleaf2021_K562.hdf5", 
+                                                      "LSI_MimitouSmibert2021.hdf5", "LSI_PierceGreenleaf2021_MCF7.hdf5", "LSI_PierceGreenleaf2021_GM12878.hdf5", 
+                                                      "LSI_Liscovitch-BrauerSanjana2021_K562_1.hdf5", "processed_PierceGreenleaf2021_GM12878.hdf5", 
+                                                      "processed_Liscovitch-BrauerSanjana2021_K562_1.hdf5", "processed_PierceGreenleaf2021_K562.hdf5", 
+                                                      "processed_Liscovitch-BrauerSanjana2021_K562_2.hdf5", "processed_MimitouSmibert2021.hdf5", "processed_PierceGreenleaf2021_MCF7.hdf5"])
     args = parser.parse_args()
     
     dataset = args.dataset
@@ -54,3 +59,10 @@ if __name__ == "__main__":
         evaluate("processed_sciplex_K562", group_by="dose_value", rank=False, metric=metric, data_path=data_path, k=k)
     elif args.dataset == "sciplex_MCF7":
         evaluate("processed_sciplex_MCF7", group_by="dose_value", rank=False, metric=metric, data_path=data_path, k=k)
+    elif args.dataset == "bhattacherjee":
+        print("BHATTACHERJEE")
+        evaluate("processed_bhattacherjee_excitatory", group_by="label", rank=False, metric=metric, data_path=data_path, k=k)
+    elif "LSI" in args.dataset:
+        evaluate(args.dataset, group_by="perturbation", rank=False, metric="euclidean", data_path=data_path, k=k)
+    else:
+        evaluate(args.dataset, group_by="perturbation", rank=False, metric="sqeuclidean", data_path=data_path, k=k)

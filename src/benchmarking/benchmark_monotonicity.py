@@ -14,7 +14,7 @@ def get_DEGs(result_df, alpha=0.05, bonferroni=True):
 
 def augur_scores(adata, group_by, reference):
     groups = adata.obs[group_by].unique()
-    adata.obs["cell_type"] = "dummy_cell_type"
+    #adata.obs["cell_type"] = "dummy_cell_type"
     augur_results = dict()
     for test_group in groups:
         if test_group == reference:
@@ -87,13 +87,13 @@ def benchmark_all(adata, group_by, reference):
     Returns:
         Dictionary with results from each method
     """
-    try:
-        print("calculating augur scores")
-        augur_results = augur_scores(adata, group_by, reference)
-    except:
-        print("augur failed")
-        augur_results = dict()
-        
+    #try:
+    #    print("calculating augur scores")
+    augur_results = augur_scores(adata, group_by, reference)
+    #except:
+    #    print("augur failed")
+    #    augur_results = dict()
+    """   
     try:
         print("calculating wilcoxon scores")
         wilcoxon_results = wilcoxon(adata, group_by, reference)
@@ -163,10 +163,11 @@ def benchmark_all(adata, group_by, reference):
         pdata_500 = None
         deseq2_results_500 = dict()
         edgeR_results_500 = dict()
-        
+    """    
         
     return {
-        "augur": augur_results,
+        "augur": augur_results,}
+    """
         "wilcoxon": wilcoxon_results,
         "deseq2_100": deseq2_results_100,
         "edgeR_100": edgeR_results_100,
@@ -175,10 +176,11 @@ def benchmark_all(adata, group_by, reference):
         "deseq2_500": deseq2_results_500,
         "edgeR_500": edgeR_results_500
     }
+    """
 
 
 def main(dataset_path):
-    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and f.startswith("processed") and ("schiebinger" in f))]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and f.startswith("processed") and ("bhatta" in f))]
     files = [os.path.join(dataset_path, f) for f in names]
     print(names)
     print(files)
@@ -201,6 +203,10 @@ def main(dataset_path):
             group_by = "perturbation"
             reference = "control"
             
+        elif "bhatta" in f:
+            group_by = "label"
+            reference = "Maintenance_Cocaine"
+            
         else:
             raise ValueError("Unknown dataset")
         
@@ -211,7 +217,8 @@ def main(dataset_path):
         
         results = benchmark_all(adata, group_by, reference)
         results_df = pd.DataFrame(results)
-        results_df.to_csv(f"{dataset_path}/benchmark_results_{os.path.basename(f)}.csv", index=True)
+        print(results_df)
+        results_df.to_csv(f"{dataset_path}/benchmark_results_augur_{os.path.basename(f)}.csv", index=True)
 
             
 if __name__ == "__main__":
