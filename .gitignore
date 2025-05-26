@@ -10,3 +10,5 @@ preprocess_jobs/
 benchmarking_jobs/
 *single_files/*
 *single_files/*
+*.ipynb_checkpoints/*
+*/__pycache__/*
