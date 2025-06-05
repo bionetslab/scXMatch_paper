@@ -23,7 +23,7 @@ def pre_process_all(dataset_path):
             adata.obs = obs
             adata.var = var
             
-            #adata = scanpy_setup(adata)
+            adata = scanpy_setup(adata)
             
             group_by = "perturbation"
             
