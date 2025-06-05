@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from matplotlib.lines import Line2D
 from itertools import chain
-from src import *
 
 def draw_ellipse(ax, mean, cov, color):
     ellipse = Ellipse(mean, width=2*cov[0], height=2*cov[1], edgecolor=None, facecolor=color, alpha=0.4)
@@ -16,12 +15,14 @@ def draw_ellipse(ax, mean, cov, color):
 def draw_matching(adata, matching, p_val, z, support, ax, group_colors):
     pos = {i: adata.X[i] for i in chain.from_iterable(matching)}
     G = nx.Graph()
-    e_colors = [(0.8, 0.8, 0.8) if adata.obs["Group"].iloc[u] == adata.obs["Group"].iloc[v] else (0, 0, 0) for u, v in matching]
     G.add_edges_from(matching)
     
     n_colors = adata.obs["Group"].map(group_colors).values[list(G.nodes.keys())]
-    nx.draw(G, pos=pos, node_color=n_colors, edge_color=e_colors, node_size=10, ax=ax)
-    ax.set_title(f"P={p_val:.5f}, z={z:.3f}")
+    nx.draw(G, pos=pos, node_color=n_colors, node_size=10, ax=ax)
+    if p_val < 0.05:
+        ax.set_title(f"P={p_val:.1e}")
+    else:
+        ax.set_title(f"P={p_val:.2f}")
 
 # Create figure
 def legend_elements(groups, group_colors, group_means, group_covs):
