@@ -94,17 +94,41 @@ def assign_pseudo_bulks_and_splits(adata, group_by):
 
 
 def pre_process_all(dataset_path):
-    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and "bhatta" in f)]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and "mcfarland" in f)]
     files = [os.path.join(dataset_path, f) for f in names]
     
     print(names)
     for n, f in tqdm(zip(names, files)):
         adata = ad.read_h5ad(f)
-        adata = scanpy_setup(adata)
         
         if "mcfarland" in n:
-            group_by = "perturbation_grouped"
-            adata.obs[group_by] = adata.obs['perturbation'].apply(lambda x: x.split("_")[-1])
+            #group_by = "perturbation_grouped"
+            #adata.obs[group_by] = adata.obs['perturbation'].apply(lambda x: x.split("_")[-1])
+            adata.obs["pert_time"] = adata.obs["perturbation"].astype(str) + "_" + adata.obs["time"].astype(str)
+            adata.obs["pert_time"].replace({"control_6": "control", "control_24":"control"}, inplace=True)
+            
+            suitable = {
+                'BICR31': ['Idasanutlin', 'Trametinib'], 
+                'CAL62': ['BRD3379'],
+                'IGROV1': ['BRD3379'],
+                'OAW42': ['BRD3379']
+            }
+            
+            index = 1
+            for cell_line in suitable:
+                for drug in suitable[cell_line]:
+                    print("cell_line", cell_line, suitable[cell_line])
+                    subset = adata[adata.obs["cell_line"] == cell_line].copy()
+                    subset = subset[subset.obs["time"].isin(["6", "24"])].copy()
+                    subset = subset[subset.obs["perturbation"].isin(["control", drug])].copy()
+                    subset = scanpy_setup(subset)
+                    group_by = "pert_time"
+                    subset = assign_pseudo_bulks_and_splits(subset, group_by)
+                    print(subset)
+                    print(subset.obs[group_by].value_counts())
+                    subset.write_h5ad(f"{dataset_path}/processed_mcfarland_{index}.hdf5")
+                    index += 1
+            
         elif "norman" in n:
             group_by = "n_guides"
             adata.obs['n_guides'] = np.where(
@@ -120,8 +144,28 @@ def pre_process_all(dataset_path):
         else:
             raise ValueError("Unknown dataset")
         
-        adata = assign_pseudo_bulks_and_splits(adata, group_by)
-        adata.write_h5ad(f"{dataset_path}/processed_{n}")
+        
+        if "sciplex" in n:
+            for pathway in adata.obs["pathway"].unique():
+                subset = adata[adata.obs["pathway"].isin([pathway, "Vehicle"])].copy()
+                subset = scanpy_setup(subset)
+
+                subset = assign_pseudo_bulks_and_splits(subset, group_by)
+                name = pathway.replace("/", "_").replace(" ", "").replace(",", "_")
+                subset.write_h5ad(f"{dataset_path}/sciplex_per_pathway/{name}_processed_{n}")
+            
+            adata.obs["perturbation2"] = adata.obs["perturbation"].apply(lambda x: x.split("_")[0])
+            for compound in adata.obs["perturbation2"].unique():
+                subset = adata[adata.obs["perturbation2"].isin([compound, "control"])].copy()
+                subset = scanpy_setup(subset)
+
+                subset = assign_pseudo_bulks_and_splits(subset, group_by)
+                name = compound.replace("/", "_").replace(" ", "").replace(",", "_")
+                subset.write_h5ad(f"{dataset_path}/sciplex_per_compound/{name}_processed_{n}")
+                
+        #else:
+        #    adata = assign_pseudo_bulks_and_splits(adata, group_by)
+        #    adata.write_h5ad(f"{dataset_path}/processed_{n}")
     
     
 if __name__ == "__main__":
