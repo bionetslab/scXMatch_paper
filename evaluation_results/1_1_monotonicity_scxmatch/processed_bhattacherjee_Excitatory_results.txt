@@ -1,3 +1,0 @@
-test_group,reference,k,p,z,s
-withdraw_15d_Cocaine,Maintenance_Cocaine,100,0.0,-45.12052264927467,0.9998347926647944
-withdraw_48h_Cocaine,Maintenance_Cocaine,100,4.37907142006948e-31,-11.533798738769105,1.0
