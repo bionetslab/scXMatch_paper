@@ -87,13 +87,13 @@ def benchmark_all(adata, group_by, reference):
     Returns:
         Dictionary with results from each method
     """
-    #try:
-    #    print("calculating augur scores")
-    augur_results = augur_scores(adata, group_by, reference)
-    #except:
-    #    print("augur failed")
-    #    augur_results = dict()
-    """   
+    try:
+        print("calculating augur scores")
+        augur_results = augur_scores(adata, group_by, reference)
+    except:
+        print("augur failed")
+        augur_results = dict()
+       
     try:
         print("calculating wilcoxon scores")
         wilcoxon_results = wilcoxon(adata, group_by, reference)
@@ -163,11 +163,10 @@ def benchmark_all(adata, group_by, reference):
         pdata_500 = None
         deseq2_results_500 = dict()
         edgeR_results_500 = dict()
-    """    
-        
+       
+      
     return {
-        "augur": augur_results,}
-    """
+        "augur": augur_results,
         "wilcoxon": wilcoxon_results,
         "deseq2_100": deseq2_results_100,
         "edgeR_100": edgeR_results_100,
@@ -176,7 +175,6 @@ def benchmark_all(adata, group_by, reference):
         "deseq2_500": deseq2_results_500,
         "edgeR_500": edgeR_results_500
     }
-    """
 
 
 def main(dataset_path):
