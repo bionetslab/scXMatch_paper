@@ -88,7 +88,6 @@ def benchmark_all(adata, group_by, reference):
     Returns:
         Dictionary with results from each method
     """
-
     try:
         print("calculating augur scores")
         augur_results = augur_scores(adata, group_by, reference)
