@@ -14,7 +14,7 @@ def get_DEGs(result_df, alpha=0.05, bonferroni=True):
 
 def augur_scores(adata, group_by, reference):
     groups = adata.obs[group_by].unique()
-    #adata.obs["cell_type"] = "dummy_cell_type"
+    adata.obs["cell_type"] = "dummy_cell_type"
     augur_results = dict()
     for test_group in groups:
         if test_group == reference:
@@ -43,6 +43,7 @@ def wilcoxon(adata, group_by, reference):
 def deseq2(pdata, group_by, reference):
     groups = pdata.obs[group_by].unique()
     deseq2_results = dict()
+
     for test_group in groups:
         if test_group == reference:
             continue
@@ -93,19 +94,18 @@ def benchmark_all(adata, group_by, reference):
     except:
         print("augur failed")
         augur_results = dict()
-       
+      
     try:
         print("calculating wilcoxon scores")
         wilcoxon_results = wilcoxon(adata, group_by, reference)
     except:
         print("wilcoxon failed")
         wilcoxon_results = dict()
-        
     try:
         print("calculating pseudo-bulk data")
+
         pdata_100 = get_pseudo_bulk_data(adata, group_by, pseudo_bulk="pseudo_bulk_100")
         try:
-            print("calculating deseq2 scores")
             deseq2_results_100 = deseq2(pdata_100, group_by, reference)
         except:
             deseq2_results_100 = dict()
@@ -115,7 +115,7 @@ def benchmark_all(adata, group_by, reference):
             edgeR_results_100 = edgeR(pdata_100, group_by, reference)
         except:
             edgeR_results_100 = dict()  
-            
+
     except:
         print("pseudo-bulk failed")
         pdata_100 = None
@@ -143,28 +143,7 @@ def benchmark_all(adata, group_by, reference):
         deseq2_results_200 = dict()
         edgeR_results_200 = dict()
     
-    try:
-        print("calculating pseudo-bulk data")
-        pdata_500 = get_pseudo_bulk_data(adata, group_by, pseudo_bulk="pseudo_bulk_500")
-        try:
-            print("calculating deseq2 scores")
-            deseq2_results_500 = deseq2(pdata_500, group_by, reference)
-        except:
-            deseq2_results_500 = dict()
-            
-        try:
-            print("calculating edgeR scores")
-            edgeR_results_500 = edgeR(pdata_500, group_by, reference)
-        except:
-            edgeR_results_500 = dict()  
-            
-    except:
-        print("pseudo-bulk failed")
-        pdata_500 = None
-        deseq2_results_500 = dict()
-        edgeR_results_500 = dict()
-       
-      
+        
     return {
         "augur": augur_results,
         "wilcoxon": wilcoxon_results,
@@ -172,21 +151,25 @@ def benchmark_all(adata, group_by, reference):
         "edgeR_100": edgeR_results_100,
         "deseq2_200": deseq2_results_200,
         "edgeR_200": edgeR_results_200,
-        "deseq2_500": deseq2_results_500,
-        "edgeR_500": edgeR_results_500
     }
 
 
 def main(dataset_path):
-    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and f.startswith("processed") and ("bhatta" in f))]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and ("bhattacherjee" in f))]
     files = [os.path.join(dataset_path, f) for f in names]
-    print(names)
-    print(files)
-    
+
     for f in files:
+        basen = os.path.basename(f)
+        p = f"{dataset_path}/benchmark_results_{basen}.csv"
+        if os.path.exists(p):
+            print(f"Skipping {p}, results already exist.", file=sys.stderr)
+            continue
+        else:
+            print(f"Processing {p}", file=sys.stderr)
+            
         adata = ad.read_h5ad(f)
         if "mcfarland" in f:
-            group_by = "perturbation_grouped"
+            group_by = "pert_time"
             reference = "control"
             
         elif "norman" in f:
@@ -208,16 +191,13 @@ def main(dataset_path):
         else:
             raise ValueError("Unknown dataset")
         
-        print("reading", f)
         adata = ad.read_h5ad(f)
         adata.obs[group_by] = adata.obs[group_by].astype(str)
-        print(adata.obs[group_by].value_counts(), file=sys.stderr)
         
         results = benchmark_all(adata, group_by, reference)
         results_df = pd.DataFrame(results)
-        print(results_df)
-        results_df.to_csv(f"{dataset_path}/benchmark_results_augur_{os.path.basename(f)}.csv", index=True)
+        results_df.to_csv(f"{dataset_path}/benchmark_results_{os.path.basename(f)}.csv", index=True)
 
             
 if __name__ == "__main__":
-    main("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji")
+    main("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/")
