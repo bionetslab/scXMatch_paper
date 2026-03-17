@@ -25,7 +25,7 @@ def augur_scores(adata, group_by, reference):
         _, v_results = ag_rfc.predict(loaded_data, subsample_size=20, n_threads=16, select_variance_features=True, span=1)
         augur_results[test_group] = v_results['summary_metrics'].loc["mean_augur_score"].item()
     return augur_results
-
+ 
 
 def wilcoxon(adata, group_by, reference):
     groups = adata.obs[group_by].unique()

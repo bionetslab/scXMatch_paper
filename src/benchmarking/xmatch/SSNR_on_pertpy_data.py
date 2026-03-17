@@ -51,6 +51,7 @@ def prepare(data_path, name, result_path=f"../evaluation_results/1_2_SSNR_scxmat
         group_by = "perturbation"
         reference = "control"
 
+
     adata.obs[group_by] = adata.obs[group_by].astype(str)
     groups = adata.obs[group_by].unique()
     return adata, group_by, reference, groups

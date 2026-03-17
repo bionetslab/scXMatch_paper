@@ -31,7 +31,8 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):
             
         elif "schiebinger" in f:
             group_by = "perturbation"
-            reference = "control"            
+            reference = "control"         
+               
         elif "bhatta" in f:
             group_by = "label"
             reference = "Maintenance_Cocaine"

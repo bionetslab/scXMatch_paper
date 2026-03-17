@@ -29,7 +29,7 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):
             
         elif "sciplex" in f:
             group_by = "dose_value"
-            reference = "0.0"
+            reference = "0.0"    
             
         elif "schiebinger" in f:
             group_by = "perturbation"

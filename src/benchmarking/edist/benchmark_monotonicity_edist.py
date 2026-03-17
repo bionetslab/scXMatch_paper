@@ -15,7 +15,7 @@ def get_e_distance_log(adata, group_by, reference):
     print(f"Minimum group size: {min_count}", flush=True, file=sys.stderr)
 
     sampled_indices = []
-    relative_support_dict = dict()
+    relative_support_dict = dict() 
 
     for g in group_counts.index:
         idx = np.where(adata.obs[group_by] == g)[0]
