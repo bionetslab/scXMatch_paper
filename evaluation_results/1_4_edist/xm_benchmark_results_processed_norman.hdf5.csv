@@ -1,3 +1,3 @@
-testgroup,reference,relative_support,time_test,P,total_RAM
-1,control,0.9999712519764267,1551.883857011795,2.330191165145413e-75,4.6 
-2,control,0.9999252615844544,840.23974609375,0.0,4.6 
+testgroup,reference,relative_support,time_test,P,total_RAM,perturbation_strength
+1,control,0.9999712519764267,1551.883857011795,2.330191165145413e-75,4.6,1
+2,control,0.9999252615844544,840.23974609375,0.0,4.6,2
