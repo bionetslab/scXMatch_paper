@@ -1,0 +1,17 @@
+testgroup,reference,relative_support,time_test,P,k
+withdraw_15d_Cocaine,Maintenance_Cocaine,0.999504377994383,29.892089128494263,0.0,10
+withdraw_48h_Cocaine,Maintenance_Cocaine,1.0,2.1771936416625977,2.0247234310587864e-28,10
+withdraw_15d_Cocaine,Maintenance_Cocaine,0.9998347926647944,7.610649347305298,0.0,20
+withdraw_48h_Cocaine,Maintenance_Cocaine,1.0,2.0947866439819336,2.0247234310587864e-28,20
+withdraw_15d_Cocaine,Maintenance_Cocaine,0.9998347926647944,13.551969051361084,0.0,50
+withdraw_48h_Cocaine,Maintenance_Cocaine,1.0,2.0236947536468506,1.237636908150705e-31,50
+withdraw_15d_Cocaine,Maintenance_Cocaine,0.9998347926647944,24.06221628189087,0.0,100
+withdraw_48h_Cocaine,Maintenance_Cocaine,1.0,2.14516544342041,4.37907142006948e-31,100
+withdraw_15d_Cocaine,Maintenance_Cocaine,0.9998347926647944,60.820223569869995,0.0,500
+withdraw_48h_Cocaine,Maintenance_Cocaine,1.0,3.672008752822876,4.37907142006948e-31,500
+withdraw_15d_Cocaine,Maintenance_Cocaine,0.9998347926647944,94.14655065536499,0.0,1000
+withdraw_48h_Cocaine,Maintenance_Cocaine,1.0,5.553403377532959,4.37907142006948e-31,1000
+withdraw_15d_Cocaine,Maintenance_Cocaine,0.9998347926647944,176.25256633758545,0.0,2000
+withdraw_48h_Cocaine,Maintenance_Cocaine,1.0,9.105196475982666,4.37907142006948e-31,2000
+withdraw_15d_Cocaine,Maintenance_Cocaine,0.9998347926647944,232.76293444633484,0.0,full
+withdraw_48h_Cocaine,Maintenance_Cocaine,1.0,51.9460654258728,4.37907142006948e-31,full
