@@ -5,20 +5,19 @@ import pandas as pd
 import os
 import sys
 from benchmark_monotonicity import * 
-from benchmark_monotonicity_edist import get_e_distance
 
-def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):
+
+def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji"):
     dataset_name = sys.argv[1]
-    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and (dataset_name in f))]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and f.startswith("processed") and (dataset_name in f))]
     files = [os.path.join(dataset_path, f) for f in names]
-
-    level = dataset_path.split("_")[-1]
-    os.makedirs(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_3_var_benchmark/{level}/", exist_ok=True)
+    print(names)
+    print(files)
     
     for f in files:
         adata = ad.read_h5ad(f)
         if "mcfarland" in f:
-            group_by = "pert_time"
+            group_by = "perturbation_grouped"
             reference = "control"
             
         elif "norman" in f:
@@ -44,29 +43,20 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):
         adata = ad.read_h5ad(f)
         adata.obs[group_by] = adata.obs[group_by].astype(str)
         
-        groups = sorted(adata.obs[group_by].unique())[::-1]
-        
+        groups = adata.obs[group_by].unique()
         
         for test_group in groups:
             if test_group == reference:
                 continue
-            for group_by_split in ["split_10", "split_30", "split_50"]:
+            for group_by_split in ["split_10", "split_30", "split_50", "split_1"]:
                 subset_1 = adata[( (adata.obs[group_by] == test_group) & (adata.obs[group_by_split] == 1) ), :].obs.index
-                for group_by_split_reference in ["split_10", "split_30", "split_50"]:
-                    if os.path.exists(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_3_var_benchmark/{level}/edist_benchmark_results_{os.path.basename(f)}_{test_group}_{group_by_split}_ref_{group_by_split_reference}.csv"):
-                        print("skipi")
-                        continue
+                for group_by_split_reference in ["split_10", "split_30", "split_50", "split_1"]:
                     try:
                         subset_2 = adata[( (adata.obs[group_by] == reference) & (adata.obs[group_by_split_reference] == 1) ), :].obs.index
                         print(adata[list(subset_1) + list(subset_2)].obs[group_by].value_counts())
-                        results = get_e_distance(adata[list(subset_1) + list(subset_2)], group_by, reference=reference)
-                        # results_df = pd.DataFrame(results)
-                        results_df = pd.DataFrame.from_dict(
-                            results,
-                            orient="index",
-                            columns=["pvalue_adj"]
-                        )        
-                        results_df.to_csv(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_3_var_benchmark/{level}/edist_benchmark_results_{os.path.basename(f)}_{test_group}_{group_by_split}_ref_{group_by_split_reference}.csv", index=True)
+                        results = benchmark_all(adata[list(subset_1) + list(subset_2)], group_by, reference=reference)
+                        results_df = pd.DataFrame(results)
+                        results_df.to_csv(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_3_var_benchmark/benchmark_results_{os.path.basename(f)}_{test_group}_{group_by_split}_ref_{group_by_split_reference}.csv", index=True)
                     except:
                         continue
                 
