@@ -12,19 +12,12 @@ def get_xm_log(adata, group_by, reference, k):
         if test_group == reference:
             continue
         start_time = time.time()
-        p, z, s = test(adata, group_by=group_by, reference=reference, test_group=test_group, rank=False, metric="sqeuclidean", k=k)
+        test_result = test(adata, group_by=group_by, reference=reference, test_group=test_group, rank=False, metric="sqeuclidean", k=k)
         end_time = time.time()
         elapsed_time = end_time - start_time
+        test_result.update({"testgroup": test_group, "reference": reference, "k": k, "time_test": elapsed_time})
         
-        results_list.append({
-            "testgroup": test_group,
-            "reference": reference,
-            "relative_support": s,
-            "time_test": elapsed_time,
-            "P": p,
-            "k": k
-        })
-
+        results_list.append(test_result)
     results_df = pd.DataFrame(results_list)
     return results_df
 
@@ -37,7 +30,7 @@ def main(dataset_path):
     
     for f in files:
         basen = os.path.basename(f)
-        p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_5_effect_k/different_k_xm_benchmark_results_{basen}.csv"
+        p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/2_1_ATACseq/results_{basen}_effect_size.csv"
 
         adata = ad.read_h5ad(f)
         if "mcfarland" in f:
@@ -66,21 +59,10 @@ def main(dataset_path):
         adata = ad.read_h5ad(f)
         adata.obs[group_by] = adata.obs[group_by].astype(str)
         
-        result_dfs = list()
-        k_max = len(adata) - 1
-        for k in [10, 20, 50, 100, 500, 1000, 2000, "full"]:
-            if k != "full":
-                if k < k_max:
-                    results_df = get_xm_log(adata, group_by, reference, k)
-                    result_dfs.append(results_df)
-            else:
-                results_df = get_xm_log(adata, group_by, reference, k)
-                result_dfs.append(results_df)
-                
-        results_df = pd.concat(result_dfs)
+        results_df = get_xm_log(adata, group_by, reference, k=100)
         results_df.to_csv(p, index=False)
 
         
 
 if __name__ == "__main__":
-    main("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/")
+    main("/home/woody/iwbn/iwbn007h/data/scATACseq/")

@@ -7,25 +7,32 @@ import sys
 import scanpy as sc
 import time
 
-def get_e_distance_log(adata, group_by, reference):
-    # --- Balance groups ---
+def get_e_distance_log(adata, group_by, reference, subsampling=True):
     group_counts = adata.obs[group_by].value_counts()
-    min_count = group_counts.min()
+    if subsampling:
+        print("WARNING: subsampling enabled, results will be based on a subset of the data.", flush=True, file=sys.stderr)
+    # --- Balance groups ---
+        min_count = group_counts.min()
 
-    print(f"Minimum group size: {min_count}", flush=True, file=sys.stderr)
+        print(f"Minimum group size: {min_count}", flush=True, file=sys.stderr)
 
-    sampled_indices = []
-    relative_support_dict = dict()
+        sampled_indices = []
+        relative_support_dict = dict()
 
-    for g in group_counts.index:
-        idx = np.where(adata.obs[group_by] == g)[0]
-        sampled = np.random.choice(idx, min_count, replace=False)
-        sampled_indices.append(sampled)
-        relative_support_dict[g] = len(sampled) / len(idx)
+        for g in group_counts.index:
+            idx = np.where(adata.obs[group_by] == g)[0]
+            sampled = np.random.choice(idx, min_count, replace=False)
+            sampled_indices.append(sampled)
+            relative_support_dict[g] = len(sampled) / len(idx)
 
-    sampled_indices = np.concatenate(sampled_indices)
-    subset = adata[sampled_indices].copy()
-
+        sampled_indices = np.concatenate(sampled_indices)
+        subset = adata[sampled_indices].copy()
+    else:
+        relative_support_dict = dict()
+        for g in group_counts.index:
+            relative_support_dict[g] = 1
+        subset = adata.copy()
+    
     # --- PCA ---
     n_comps = min(50, subset.shape[1] - 1, subset.shape[0] - 1)
     t1 = time.time()
@@ -69,7 +76,7 @@ def main(dataset_path):
     
     for f in files:
         basen = os.path.basename(f)
-        p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_4_edist/edist_benchmark_results_{basen}.csv"
+        p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_4_edist/no_subsampling_edist_benchmark_results_{basen}_with_10k.csv"
         if os.path.exists(p):
             print(f"not skipping {p}, results already exist.", flush=True, file=sys.stderr)
             #continue
@@ -103,7 +110,7 @@ def main(dataset_path):
         adata = ad.read_h5ad(f)
         adata.obs[group_by] = adata.obs[group_by].astype(str)
         
-        results_df = get_e_distance_log(adata, group_by, reference)
+        results_df = get_e_distance_log(adata, group_by, reference, subsampling=False)
         results_df.to_csv(p, index=False)
 
         
