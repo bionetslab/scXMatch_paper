@@ -1,0 +1,7 @@
+,pvalue_adj,split_1,test_group
+1.0,0.1958,10,withdraw_15d_Cocaine
+1.0,0.3235,30,withdraw_15d_Cocaine
+1.0,0.7312,50,withdraw_15d_Cocaine
+1.0,0.1237,10,withdraw_48h_Cocaine
+1.0,0.001,30,withdraw_48h_Cocaine
+1.0,0.0425,50,withdraw_48h_Cocaine
