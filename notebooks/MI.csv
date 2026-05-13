@@ -1,0 +1,10 @@
+,bhattacherjee_Astro,bhattacherjee_Endo,bhattacherjee_Excitatory,mcfarland_1,mcfarland_2,mcfarland_3,mcfarland_4,mcfarland_5,norman,schiebinger
+augur,1.0,1.0,1.0,0,1.0,0,0,0,1.0,0.73
+balanced_edistance,1.0,1.0,1.0,0,0.0,0,0,0,1.0,0.58
+deseq2_100,1.0,1.0,1.0,1,1.0,1,1,1,1.0,0.93
+edgeR_100,1.0,1.0,1.0,1,1.0,1,1,1,1.0,0.99
+effect_size,1.0,1.0,1.0,0,1.0,1,1,1,1.0,1.0
+memento,1.0,1.0,1.0,0,1.0,0,0,0,1.0,0.57
+scXMatch,1.0,1.0,1.0,0,1.0,1,1,1,1.0,1.0
+unbalanced_edistance,1.0,1.0,1.0,0,1.0,0,0,0,1.0,0.59
+wilcoxon,1.0,1.0,1.0,0,1.0,0,0,0,1.0,0.95

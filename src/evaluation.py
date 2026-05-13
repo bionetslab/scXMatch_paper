@@ -31,10 +31,10 @@ def compute_pareto_optimal_datasets(mi: pd.DataFrame, ssnr: pd.DataFrame, sv: pd
                 if i != j:
                     if ((mi_vals[j] >= mi_vals[i]) and
                         (ssnr_vals[j] >= ssnr_vals[i]) and
-                        (sv_vals[j] <= sv_vals[i]) and
+                        (sv_vals[j] >= sv_vals[i]) and
                         ((mi_vals[j] > mi_vals[i]) or
                          (ssnr_vals[j] > ssnr_vals[i]) or
-                         (sv_vals[j] < sv_vals[i]))):
+                         (sv_vals[j] > sv_vals[i]))):
                         is_pareto[i] = False
                         break
         return is_pareto
@@ -119,7 +119,7 @@ def get_ssnr_df(monotonicity_result_df,
 
     all_within = pd.concat(all_within).astype(float).rename({"p": "scXMatch"}, axis=1)
     all_within = all_within.dropna(axis=1)
-    
+
     ssnr_dict = dict()
     for dataset in xm_results_dfs_within:
         ssnr_dict[dataset] = dict()
@@ -160,7 +160,8 @@ def get_sv_df(monotonicity_result_df,
               xm_results_var = "../evaluation_results/1_3_var_scxmatch/",
               memento_results_var = "../evaluation_results/1_11_var_memento/",
               edist_results_var = "../evaluation_results/1_14_var_edistance/",
-              xm_effect_size_results_var = "../evaluation_results/1_8_SV_effect_size/"
+              xm_effect_size_results_var = "../evaluation_results/1_8_SV_effect_size/",
+              metrics=['scXMatch', 'augur', 'wilcoxon', 'deseq2_100', 'edgeR_100', 'memento', 'balanced_edistance', 'unbalanced_edistance', 'effect_size']
               ):
     bm_results_dfs_var = read_benchmark_var(bm_results_var)
     xm_results_dfs_var = read_xm_var(xm_results_var)
@@ -181,6 +182,7 @@ def get_sv_df(monotonicity_result_df,
         all_var[dataset] = conc
     
     var_res_all = pd.concat(all_var)#.dropna(axis=1)
+
     var_dict = dict()
     
     for dataset in xm_results_dfs_var:
@@ -197,22 +199,33 @@ def get_sv_df(monotonicity_result_df,
         var_dict[dataset] = dict()
         s0_df = monotonicity_result_df[dataset]
         s_df = var_res_all.loc[dataset]
-        for metric in s0_df.columns:
+        for metric in metrics:
             if metric in ["deseq2_500", "edgeR_500", "deseq2_200", "edgeR_200"]:
                 continue
             var_dict[dataset][metric] = list()
             for test_group in s0_df.index:
                 s0 = s0_df.loc[test_group, metric]
-                s = s_df.loc[test_group, metric].values
-                print(dataset, metric, s, s0)
-                try:
-                    for si in s:
-                        di = np.abs(si - s0) / (np.abs(s0) + np.finfo.eps)
+                if dataset == "schiebinger":
+                    if int(test_group) == test_group:
+                        s = s_df.loc["D"+str(int(test_group)), metric].values
+                    else:
+                        s = s_df.loc["D"+str(test_group), metric].values
+
+                else:
+                    s = s_df.loc[str(test_group), metric].values
+                    
+                if s0 == np.nan:
+                    raise ValueError(f"s0 is nan for dataset {dataset}, metric {metric}, test_group {test_group}")
+                
+                if metric == "scXMatch":
+                    s0 = 1 - s0
+                for si in s:
+                    if si != np.nan:
+                        di = 1 - np.abs(si - s0) / (np.abs(s0) + 1e-15)
                         var_dict[dataset][metric].append(di)
-                except:
-                    print(dataset, metric, s0, s)
-                    var_dict[dataset][metric].append(np.nan)
-            var_dict[dataset][metric] = np.mean(var_dict[dataset][metric])
+                    else:
+                        raise ValueError(f"si is nan for dataset {dataset}, metric {metric}, test_group {test_group}")
+            var_dict[dataset][metric] = np.nanmean(var_dict[dataset][metric])
         
     var_res = pd.DataFrame(var_dict, index=var_res_all.columns)
     melted_var = pd.melt(var_res.reset_index().rename({"index": "metric"}, axis=1), id_vars="metric", var_name="dataset")    
