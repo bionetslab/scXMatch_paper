@@ -192,6 +192,28 @@ def get_sv_df(monotonicity_result_df,
             results[i] = split_df.loc[test_group].var(axis=0).values
         var_dict[dataset] = np.mean(results, axis=0)
         
+        
+    for dataset in xm_results_dfs_var:
+        var_dict[dataset] = dict()
+        s0_df = monotonicity_result_df[dataset]
+        s_df = var_res_all.loc[dataset]
+        for metric in s0_df.columns:
+            if metric in ["deseq2_500", "edgeR_500", "deseq2_200", "edgeR_200"]:
+                continue
+            var_dict[dataset][metric] = list()
+            for test_group in s0_df.index:
+                s0 = s0_df.loc[test_group, metric]
+                s = s_df.loc[test_group, metric].values
+                print(dataset, metric, s, s0)
+                try:
+                    for si in s:
+                        di = np.abs(si - s0) / (np.abs(s0) + np.finfo.eps)
+                        var_dict[dataset][metric].append(di)
+                except:
+                    print(dataset, metric, s0, s)
+                    var_dict[dataset][metric].append(np.nan)
+            var_dict[dataset][metric] = np.mean(var_dict[dataset][metric])
+        
     var_res = pd.DataFrame(var_dict, index=var_res_all.columns)
     melted_var = pd.melt(var_res.reset_index().rename({"index": "metric"}, axis=1), id_vars="metric", var_name="dataset")    
     return var_res_all, var_res, melted_var
