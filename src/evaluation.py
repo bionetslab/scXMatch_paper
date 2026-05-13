@@ -9,6 +9,7 @@ from statsmodels.stats.multitest import multipletests
 import sys
 sys.path.append("../src")
 from evaluation_metrics import *
+from evaluation_utils import *
 
 
 import pandas as pd
@@ -51,28 +52,38 @@ def compute_pareto_optimal_datasets(mi: pd.DataFrame, ssnr: pd.DataFrame, sv: pd
     return pareto_counts, pareto_optimal_datasets
 
 
+def get_mon_df(xm_results = "../evaluation_results/1_1_monotonicity_scxmatch/", 
+               bm_results = "../evaluation_results/1_1_monotonicity_benchmark/", 
+               mem_results="../evaluation_results/1_9_monotonicity_memento/", 
+               edist_results="../evaluation_results/1_12_monotonicity_edistance", 
+               xm_effect_size_results="../evaluation_results/1_6_monotonicity_effect_size"):
 
-def get_mon_df(xm_results = "../evaluation_results/1_1_monotonicity_scxmatch/", bm_results = "../evaluation_results/1_1_monotonicity_benchmark/"):
-    xm_result_dfs = {f.split("_results.txt")[0]: pd.read_csv(os.path.join(xm_results, f)) for f in os.listdir(xm_results) if f.endswith("results.txt")}
-    bm_result_dfs = {f.split("benchmark_results_processed_")[1].split(".")[0]: pd.read_csv(os.path.join(bm_results, f), index_col=0) for f in os.listdir(bm_results) if f.endswith("csv")}
-
+    xm_result_dfs = read_xm_monotonicity(xm_results)
+    bm_result_dfs = read_benchmarking_monotonicity(bm_results)
+    memento_result_df = read_memento_monotonicity(mem_results)
+    balanced_edistance_results_df = read_balanced_edistance_monotonicity(edist_results)
+    unbalanced_edistance_results_df = read_unbalanced_edistance_monotonicity(edist_results)
+    xm_effect_size_results_df = read_effect_size_xm_monotonicity(xm_effect_size_results)    
+    
     mon = dict()
     for dataset in bm_result_dfs:
-        bm_result_dfs[dataset] = pd.concat([xm_result_dfs[dataset].set_index("test_group")["p"], bm_result_dfs[dataset]], axis=1)
-        bm_result_dfs[dataset].rename({"p": "scXMatch"}, inplace=True, axis=1)
-        bm_result_dfs[dataset]["scXMatch"] = - bm_result_dfs[dataset]["scXMatch"]
+        bm_result_dfs[dataset] = pd.concat([
+            xm_result_dfs[dataset], 
+            bm_result_dfs[dataset], 
+            memento_result_df[dataset],
+            balanced_edistance_results_df[dataset],
+            unbalanced_edistance_results_df[dataset],
+            xm_effect_size_results_df[dataset]
+        ], axis=1)
+
         
         if "bhattacherjee" in dataset or "mcfarland" in dataset:
             bm_result_dfs[dataset] = bm_result_dfs[dataset].sort_index(ascending=False) # 48h < 15d
 
         else:
             bm_result_dfs[dataset] = bm_result_dfs[dataset].sort_index()
-
-        deg_cols = [c for c in bm_result_dfs[dataset].columns if ((not "scXMatch" in c) and (not "augur" in c))]
-        bm_result_dfs[dataset][deg_cols] = bm_result_dfs[dataset][deg_cols].astype(float) / 2000
-
         mon[dataset] = bm_result_dfs[dataset].apply(monotonicity, axis=0)
-        #bm_result_dfs[dataset]["scXMatch"] += 1
+
     mon_df = pd.DataFrame(mon)
     mon_df.drop(["deseq2_500", "edgeR_500", "deseq2_200", "edgeR_200"], axis=0, inplace=True)
     melted_mon = pd.melt(mon_df.reset_index().rename({"index": "metric"}, axis=1), id_vars="metric", var_name="dataset")
@@ -88,40 +99,43 @@ def get_mon_df(xm_results = "../evaluation_results/1_1_monotonicity_scxmatch/", 
     return bm_result_dfs, mon_df, melted_mon
 
 
-def get_ssnr_df(bm_result_dfs, bm_results_within = "../evaluation_results/1_2_SSNR_benchmark", xm_results_within = "../evaluation_results/1_2_SSNR_scxmatch/"):
-    bm_results_dfs_within = {f.split("_aggregated.csv")[0]: pd.read_csv(os.path.join(bm_results_within, f)).drop("Unnamed: 0", axis=1) for f in os.listdir(bm_results_within) if "csv" in f}
-    xm_results_dfs_within = {f.split("within_processed_")[1].split("_results.txt")[0]: pd.read_csv(os.path.join(xm_results_within, f)) for f in os.listdir(xm_results_within) if f.endswith("txt")}
+def get_ssnr_df(monotonicity_result_df, 
+                bm_results_within = "../evaluation_results/1_2_SSNR_benchmark", 
+                xm_results_within = "../evaluation_results/1_2_SSNR_scxmatch/",
+                memento_results_within = "../evaluation_results/1_10_SSNR_memento",
+                edist_results_within = "../evaluation_results/1_13_SSNR_edistance/",
+                xm_effect_size_results_within = "../evaluation_results/1_7_SSNR_effect_size"
+                ):
+    xm_results_dfs_within = read_xm_SSNR(xm_results_within)
+    bm_results_dfs_within = read_benchmarking_SSNR(bm_results_within)
+    memento_results_dfs_within = read_memento_SSNR(memento_results_within)
+    balanced_edist_results_dfs_within = read_balanced_edistance_SSNR(edist_results_within)
+    unbalanced_edist_results_dfs_within = read_unbalanced_edistance_SSNR(edist_results_within)
+    xm_effect_size_dfs_results_within = read_effect_size_xm_SSNR(xm_effect_size_results_within)
     
     all_within = dict()
-    for df in xm_results_dfs_within:
-        bm_results_dfs_within[df].rename({"split_1": "split"}, inplace=True, axis=1)
-        bm_results_dfs_within[df] = bm_results_dfs_within[df].astype(str)
-        bm_results_dfs_within[df] = bm_results_dfs_within[df][bm_results_dfs_within[df]["split"].isin(["30", "50", "10"])]
-        bm_results_dfs_within[df].set_index(["test_group", "split"], inplace=True)
-
-        xm_results_dfs_within[df] = xm_results_dfs_within[df][~xm_results_dfs_within[df]["group_by"].isin(["split_1", "split_20", "split_40"])]
-        xm_results_dfs_within[df] = xm_results_dfs_within[df].astype(str)
-        xm_results_dfs_within[df]["group_by"] = xm_results_dfs_within[df]["group_by"].apply(lambda x: x.split("_")[1])
-        xm_results_dfs_within[df].rename({"group_by": "split"}, inplace=True, axis=1)
-        xm_results_dfs_within[df].set_index(["test_group", "split"], inplace=True)
-        xm_results_dfs_within[df].drop(["k", "z", "s", "N"], axis=1, inplace=True)
-
-        conc = pd.concat([bm_results_dfs_within[df], xm_results_dfs_within[df]], axis=1)
-        conc["p"] = - conc["p"].astype(float)
-            
-        deg_cols = [c for c in conc.columns if ((not "p" in c) and (not "augur" in c))]
-        conc[deg_cols] = conc[deg_cols].astype(float) / 2000
+    #TODO GET ACTUAL SCHIEBINGER RESULTS FOR MEMENTO SSNR!!!!
+    memento_results_dfs_within["schiebinger"] = pd.DataFrame()
+    for df in monotonicity_result_df:
+        conc = pd.concat([bm_results_dfs_within[df], 
+                          xm_results_dfs_within[df],
+                          memento_results_dfs_within[df],
+                          balanced_edist_results_dfs_within[df],
+                          unbalanced_edist_results_dfs_within[df],
+                          xm_effect_size_dfs_results_within[df]
+                          ], 
+                         axis=1)
         all_within[df] = conc.sort_values(["split", "test_group"])
-        
+
     all_within = pd.concat(all_within).astype(float).rename({"p": "scXMatch"}, axis=1)
     
     ssnr_dict = dict()
     for dataset in xm_results_dfs_within:
         ssnr_dict[dataset] = dict()
-        s0_df = bm_result_dfs[dataset]
+        s0_df = monotonicity_result_df[dataset]
         s_df = all_within.loc[dataset]
         for metric in s0_df.columns:
-            if metric in ["deseq2_500", "edgeR_500"]:
+            if metric in ["deseq2_500", "edgeR_500", "deseq2_200", "edgeR_200"]:
                 continue
             ssnr_dict[dataset][metric] = list()
             for test_group in s0_df.index:
@@ -138,13 +152,14 @@ def get_ssnr_df(bm_result_dfs, bm_results_within = "../evaluation_results/1_2_SS
                 try:
                     ssnr_dict[dataset][metric].append(SSNR(s0, s))   
                 except:
-                    print(dataset, metric)
+                    print(dataset, metric, s0, s)
                     ssnr_dict[dataset][metric].append(np.nan)
                 
             
             ssnr_dict[dataset][metric] = np.mean(ssnr_dict[dataset][metric])
+            
     ssnr_df = pd.DataFrame(ssnr_dict).reset_index().rename({"index": "metric"}, axis=1)
-    ssnr_df = ssnr_df.set_index("metric").drop(["deseq2_200", "edgeR_200"], axis=0).reset_index().rename({"index": "metric"}, axis=1)
+    ssnr_df = ssnr_df.set_index("metric").reset_index().rename({"index": "metric"}, axis=1)
     
     melted_ssnr = pd.melt(ssnr_df, id_vars="metric", var_name="dataset")
     melted_ssnr.replace({"deseq2_100": "#DEGs DESeq$2_{100}$", 
