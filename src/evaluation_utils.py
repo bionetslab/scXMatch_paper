@@ -17,15 +17,26 @@ mcfarland_idxs = [
     ("IGROV1", "BRD3379"),
     ("OAW42", "BRD3379")]
 
-bhattacherjee_testgroups = {0: "Maintenance_Cocaine", 1: "withdraw_48h_Cocaine", 2: "withdraw_15d_Cocaine"}
+bhattacherjee_testgroups = {
+    0: "Maintenance_Cocaine", 
+    1: "withdraw_48h_Cocaine",
+    2: "withdraw_15d_Cocaine"}
 
+number_of_genes_in_raw_data = {
+    "norman": 19018,
+     "schiebinger": 27998,
+     "mcfarland": 32738,
+     "bhattacherjee": 18469}
 
 # -------- Functions to read in monotonicity results for different metrics --------
 def read_memento_monotonicity(mem_results):
-    # TODO divide by max possible #DEGs for SV?
     memento_results = {f.split("memento_benchmark_results_")[1].split(".")[0]: pd.read_csv(os.path.join(mem_results, f), index_col=0).set_index("test_group")[["#DEGs"]] for f in os.listdir(mem_results) if (f.endswith("csv") and not f.startswith("with_cov"))}
     for dataset in memento_results:
         memento_results[dataset].rename({"#DEGs": "memento"}, inplace=True, axis=1)
+        if dataset in list(number_of_genes_in_raw_data.keys()):
+            memento_results[dataset]["memento"] = memento_results[dataset]["memento"].astype(float) / number_of_genes_in_raw_data[dataset]
+        else:
+            memento_results[dataset]["memento"] = memento_results[dataset]["memento"].astype(float) / number_of_genes_in_raw_data[dataset.split("_")[0]]
     return memento_results
 
 def read_xm_monotonicity(xm_results):
@@ -89,11 +100,18 @@ def read_memento_SSNR(mem_results_within):
             memento_results_per_dataset[dataset]["test_group"] = f"{drug}_" + memento_results_per_dataset[dataset]["test_group"].astype(str)
         elif "bhattacherjee" in dataset:
             memento_results_per_dataset[dataset]["test_group"] = memento_results_per_dataset[dataset]["test_group"].apply(lambda x: bhattacherjee_testgroups[x])
+        elif "schiebinger" in dataset:
+            memento_results_per_dataset[dataset]["test_group"] = memento_results_per_dataset[dataset]["test_group"].apply(lambda x: f"D{x}" if int(x) != x else f"D{int(x)}")
         memento_results_per_dataset[dataset]["group_by"] = memento_results_per_dataset[dataset]["group_by"].apply(lambda x: x.split("_")[1])
         memento_results_per_dataset[dataset].rename({"group_by": "split"}, inplace=True, axis=1)
         memento_results_per_dataset[dataset].reset_index(drop=True, inplace=True)
         memento_results_per_dataset[dataset]["test_group"] = memento_results_per_dataset[dataset]["test_group"].astype(str)
         memento_results_per_dataset[dataset].set_index(["test_group", "split"], inplace=True)
+        if dataset in list(number_of_genes_in_raw_data.keys()):
+            memento_results_per_dataset[dataset]["memento"] = memento_results_per_dataset[dataset]["memento"].astype(float) / number_of_genes_in_raw_data[dataset]
+        else:
+            memento_results_per_dataset[dataset]["memento"] = memento_results_per_dataset[dataset]["memento"].astype(float) / number_of_genes_in_raw_data[dataset.split("_")[0]]
+
     return memento_results_per_dataset
 
 def read_xm_SSNR(xm_results_within):
@@ -152,3 +170,102 @@ def read_effect_size_xm_SSNR(xm_effect_size_results_within):
         xm_effect_size_results[dataset]["test_group"] = xm_effect_size_results[dataset]["test_group"].astype(str)
         xm_effect_size_results[dataset].set_index(["test_group", "split"], inplace=True)
     return xm_effect_size_results
+
+# -------- Functions to read in var results for different metrics --------
+
+def read_benchmark_var(bm_results_var):
+    bm_results_dfs_var = {f.split("_aggregated.csv")[0]: pd.read_csv(os.path.join(bm_results_var, f)) for f in os.listdir(bm_results_var) if "_aggregated.csv" in f}
+    for dataset in bm_results_dfs_var:
+        bm_results_dfs_var[dataset] = bm_results_dfs_var[dataset].rename({"Unnamed: 0": "test_group"}, axis=1)
+        bm_results_dfs_var[dataset] = bm_results_dfs_var[dataset][bm_results_dfs_var[dataset]["split_1"].isin([10, 30, 50]) & bm_results_dfs_var[dataset]["split_2"].isin([10, 30, 50])]
+        bm_results_dfs_var[dataset]["test_group"] = bm_results_dfs_var[dataset]["test_group"].astype(str)
+        bm_results_dfs_var[dataset] = bm_results_dfs_var[dataset].set_index(["test_group", "split_1", "split_2"])
+        bm_results_dfs_var[dataset][["wilcoxon", "deseq2_100", "edgeR_100", "deseq2_200", "edgeR_200"]] = bm_results_dfs_var[dataset][["wilcoxon", "deseq2_100", "edgeR_100", "deseq2_200", "edgeR_200"]].astype(float) / 2000
+
+    return bm_results_dfs_var
+
+def read_xm_var(xm_results_var):
+    xm_results_dfs_var = {f.split("processed_")[1].split("_results.txt")[0]: pd.read_csv(os.path.join(xm_results_var, f)) for f in os.listdir(xm_results_var) if f.endswith("txt")}
+    for dataset in xm_results_dfs_var:
+        xm_results_dfs_var[dataset] = xm_results_dfs_var[dataset][xm_results_dfs_var[dataset]["group_by_split"].isin(["split_10", "split_30", "split_50"]) & xm_results_dfs_var[dataset]["group_by_split_reference"].isin(["split_10", "split_30", "split_50"])]
+        xm_results_dfs_var[dataset].replace({"split_10": 10, "split_30": 30, "split_50": 50}, inplace=True)
+        xm_results_dfs_var[dataset].rename({"group_by_split": "split_1", "group_by_split_reference": "split_2", "p":"scXMatch"}, inplace=True, axis=1)
+        xm_results_dfs_var[dataset]["test_group"] = xm_results_dfs_var[dataset]["test_group"].astype(str)
+        xm_results_dfs_var[dataset].set_index(["test_group", "split_1", "split_2"], inplace=True)
+        xm_results_dfs_var[dataset]["scXMatch"] = 1 - xm_results_dfs_var[dataset]["scXMatch"].astype(float)
+        xm_results_dfs_var[dataset].drop(["k", "z", "s"], inplace=True, axis=1)
+    return xm_results_dfs_var
+    
+def read_memento_var(memento_results_var):
+    memento_results = {f.split("memento_benchmark_results_")[1].split(".")[0]: pd.read_csv(os.path.join(memento_results_var, f), index_col=0) for f in os.listdir(memento_results_var) if (f.endswith("csv") and not f.startswith("with_cov"))}
+    memento_results_per_dataset = dict()
+
+    for dataset in memento_results:
+        memento_results[dataset].drop("test_group", axis=1, inplace=True, errors="ignore")
+        memento_results[dataset].rename({"#DEGs": "memento", "testgroup": "test_group"}, inplace=True, axis=1)
+
+        if "dataset" in memento_results[dataset].columns:
+            for dataset_name, df in memento_results[dataset].groupby("dataset"):
+                memento_results_per_dataset[dataset_name.split("processed_")[1]] = df[["memento", "group_by_split_1", "group_by_split_2", "test_group"]]
+        else:
+            memento_results_per_dataset[dataset] = memento_results[dataset][["memento", "group_by_split_1", "group_by_split_2", "test_group"]]
+
+    
+    for dataset in memento_results_per_dataset:
+        if "mcfarland" in dataset:
+            idx = dataset.split("mcfarland_")[1]
+            drug = mcfarland_idxs[int(idx) - 1][1]
+            memento_results_per_dataset[dataset]["test_group"] = f"{drug}_" + memento_results_per_dataset[dataset]["test_group"].astype(str)
+        elif "bhattacherjee" in dataset:
+            memento_results_per_dataset[dataset]["test_group"] = memento_results_per_dataset[dataset]["test_group"].apply(lambda x: bhattacherjee_testgroups[x])
+        elif "schiebinger" in dataset:
+            memento_results_per_dataset[dataset]["test_group"] = memento_results_per_dataset[dataset]["test_group"].apply(lambda x: f"D{x}" if int(x) != x else f"D{int(x)}")
+        
+        memento_results_per_dataset[dataset]["group_by_split_1"] = memento_results_per_dataset[dataset]["group_by_split_1"].apply(lambda x: x.split("_")[1])
+        memento_results_per_dataset[dataset].rename({"group_by_split_1": "split_1"}, inplace=True, axis=1)
+        
+        memento_results_per_dataset[dataset]["group_by_split_2"] = memento_results_per_dataset[dataset]["group_by_split_2"].apply(lambda x: x.split("_")[1])
+        memento_results_per_dataset[dataset].rename({"group_by_split_2": "split_2"}, inplace=True, axis=1)
+        
+        memento_results_per_dataset[dataset].reset_index(drop=True, inplace=True)
+        memento_results_per_dataset[dataset]["test_group"] = memento_results_per_dataset[dataset]["test_group"].astype(str)
+        memento_results_per_dataset[dataset].set_index(["test_group", "split_1", "split_2"], inplace=True)
+        if dataset in list(number_of_genes_in_raw_data.keys()):
+            memento_results_per_dataset[dataset]["memento"] = memento_results_per_dataset[dataset]["memento"].astype(float) / number_of_genes_in_raw_data[dataset]
+        else:
+            memento_results_per_dataset[dataset]["memento"] = memento_results_per_dataset[dataset]["memento"].astype(float) / number_of_genes_in_raw_data[dataset.split("_")[0]]
+    return memento_results_per_dataset
+
+
+def read_effect_size_var(xm_effect_size_results_var):
+    xm_effect_size_results = {f.split("processed_")[1].split("_results.txt")[0]: pd.read_csv(os.path.join(xm_effect_size_results_var, f)) for f in os.listdir(xm_effect_size_results_var) if f.endswith("txt")}
+    for dataset in xm_effect_size_results:
+        xm_effect_size_results[dataset] = xm_effect_size_results[dataset][["test_group", "effect_size", "split_1", "split_2"]]
+        xm_effect_size_results[dataset]["effect_size"] = 1 - xm_effect_size_results[dataset]["effect_size"]
+        xm_effect_size_results[dataset]["split_1"] = xm_effect_size_results[dataset]["split_1"].apply(lambda x: x.split("_")[1])
+        xm_effect_size_results[dataset]["split_2"] = xm_effect_size_results[dataset]["split_2"].apply(lambda x: x.split("_")[1])
+        xm_effect_size_results[dataset]["test_group"] = xm_effect_size_results[dataset]["test_group"].astype(str)
+        xm_effect_size_results[dataset].set_index(["test_group", "split_1", "split_2"], inplace=True)
+    return xm_effect_size_results
+
+
+def read_balanced_edistance_var(edist_results_var):
+    balanced_edistance_results = {f.split("processed_")[1].split("_balanced")[0]: pd.read_csv(os.path.join(edist_results_var, f)).drop("test_group", axis=1).rename({"distance": "balanced_edistance", "testgroup": "test_group", "group_by_split": "split_1", "group_by_split_reference": "split_2"}, axis=1)[["balanced_edistance", "test_group", "split_1", "split_2"]] for f in os.listdir(edist_results_var) if (f.endswith("csv") and ("_balanced" in f))}
+    for dataset in balanced_edistance_results:
+        balanced_edistance_results[dataset]["split_1"] = balanced_edistance_results[dataset]["split_1"].apply(lambda x: x.split("_")[1])
+        balanced_edistance_results[dataset]["split_2"] = balanced_edistance_results[dataset]["split_2"].apply(lambda x: x.split("_")[1])
+        balanced_edistance_results[dataset]["test_group"] = balanced_edistance_results[dataset]["test_group"].astype(str)
+        balanced_edistance_results[dataset]["balanced_edistance"] = balanced_edistance_results[dataset]["balanced_edistance"].astype(float) / balanced_edistance_results[dataset]["balanced_edistance"].astype(float).max()
+        balanced_edistance_results[dataset].set_index(["test_group", "split_1", "split_2"], inplace=True)
+    return balanced_edistance_results
+
+
+def read_unbalanced_edistance_var(edist_results_var):
+    unbalanced_edistance_results = {f.split("processed_")[1].split("_unbalanced")[0]: pd.read_csv(os.path.join(edist_results_var, f)).drop("test_group", axis=1).rename({"distance": "unbalanced_edistance", "testgroup": "test_group", "group_by_split": "split_1", "group_by_split_reference": "split_2"}, axis=1)[["unbalanced_edistance", "test_group", "split_1", "split_2"]] for f in os.listdir(edist_results_var) if (f.endswith("csv") and ("_unbalanced" in f))}
+    for dataset in unbalanced_edistance_results:
+        unbalanced_edistance_results[dataset]["split_1"] = unbalanced_edistance_results[dataset]["split_1"].apply(lambda x: x.split("_")[1])
+        unbalanced_edistance_results[dataset]["split_2"] = unbalanced_edistance_results[dataset]["split_2"].apply(lambda x: x.split("_")[1])
+        unbalanced_edistance_results[dataset]["test_group"] = unbalanced_edistance_results[dataset]["test_group"].astype(str)
+        unbalanced_edistance_results[dataset]["unbalanced_edistance"] = unbalanced_edistance_results[dataset]["unbalanced_edistance"].astype(float) / unbalanced_edistance_results[dataset]["unbalanced_edistance"].astype(float).max()
+        unbalanced_edistance_results[dataset].set_index(["test_group", "split_1", "split_2"], inplace=True)
+    return unbalanced_edistance_results
