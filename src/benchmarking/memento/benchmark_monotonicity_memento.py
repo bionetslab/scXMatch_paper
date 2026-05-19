@@ -148,10 +148,7 @@ def main(dataset_path):
         for i in datasets:
             print(f"Running Memento for dataset {i}...")
             print(datasets[i].obs[group_by].value_counts())
-            #if ("mcfarland" in f) or ("norman" in f):
             results_df = get_memento_log(datasets[i], group_by, reference)
-            #else:
-            #    results_df = get_memento_log_with_replicate_col(datasets[i], group_by, covariate_col=covariate_col, reference=reference)
             results_df.to_csv(p.replace(".csv", f"memento_{i}.csv"))
         
 if __name__ == "__main__":
