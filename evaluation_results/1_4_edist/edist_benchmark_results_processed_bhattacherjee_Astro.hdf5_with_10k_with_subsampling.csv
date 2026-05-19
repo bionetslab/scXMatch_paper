@@ -1,0 +1,3 @@
+testgroup,reference,relative_support,time_pca,time_edist_test,P,P_adj,total_RAM
+withdraw_48h_Cocaine,Maintenance_Cocaine,0.7888888888888889,0.932368278503418,18.999789714813232,0.0001,0.000299970001,1.3
+withdraw_15d_Cocaine,Maintenance_Cocaine,1.0,0.932368278503418,18.999789714813232,0.0001,0.000299970001,1.3
