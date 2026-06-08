@@ -47,6 +47,7 @@ def deseq2(pdata, group_by, reference):
     for test_group in groups:
         if test_group == reference:
             continue
+        print("GROUPBY VALUE COUNTS", pdata.obs[group_by].value_counts())
         t = pt.tools.PyDESeq2(pdata, design=f"~{group_by}")
         results = t.compare_groups(adata=pdata, column=group_by, baseline=reference, groups_to_compare=[test_group])
         DEGs = get_DEGs(results, alpha=0.05)
@@ -71,6 +72,9 @@ def edgeR(pdata, group_by, reference):
 def get_pseudo_bulk_data(adata, group_by, pseudo_bulk):
     ps = pt.tl.PseudobulkSpace()
     pdata = ps.compute(adata, target_col=group_by, groups_col=pseudo_bulk, layer_key="counts", mode="sum")
+    print("PDATA")
+    print(pdata)
+    print(pdata.obs.head(20))
     return pdata
 
 
@@ -88,76 +92,69 @@ def benchmark_all(adata, group_by, reference):
     Returns:
         Dictionary with results from each method
     """
-    try:
-        print("calculating augur scores")
-        augur_results = augur_scores(adata, group_by, reference)
-    except:
-        print("augur failed")
-        augur_results = dict()
-      
-    try:
-        print("calculating wilcoxon scores")
-        wilcoxon_results = wilcoxon(adata, group_by, reference)
-    except:
-        print("wilcoxon failed")
-        wilcoxon_results = dict()
-    try:
-        print("calculating pseudo-bulk data")
-
-        pdata_100 = get_pseudo_bulk_data(adata, group_by, pseudo_bulk="pseudo_bulk_100")
+    if 0:
         try:
-            deseq2_results_100 = deseq2(pdata_100, group_by, reference)
+            print("calculating augur scores")
+            augur_results = augur_scores(adata, group_by, reference)
         except:
-            deseq2_results_100 = dict()
+            print("augur failed")
+            augur_results = dict()
+        
+        try:
+            print("calculating wilcoxon scores")
+            wilcoxon_results = wilcoxon(adata, group_by, reference)
+        except:
+            print("wilcoxon failed")
+            wilcoxon_results = dict()
+        
+    print("calculating pseudo-bulk data")
+    pdata_100 = get_pseudo_bulk_data(adata, group_by, pseudo_bulk="pseudo_bulk_100")
+    deseq2_results_100 = deseq2(pdata_100, group_by, reference)
             
-        try:
-            print("calculating edgeR scores")
-            edgeR_results_100 = edgeR(pdata_100, group_by, reference)
-        except:
-            edgeR_results_100 = dict()  
+    print("calculating edgeR scores")
+    edgeR_results_100 = edgeR(pdata_100, group_by, reference)
 
-    except:
-        print("pseudo-bulk failed")
-        pdata_100 = None
-        deseq2_results_100 = dict()
-        edgeR_results_100 = dict()
     
-    try:
-        print("calculating pseudo-bulk data")
-        pdata_200 = get_pseudo_bulk_data(adata, group_by, pseudo_bulk="pseudo_bulk_200")
+    if 0:
         try:
-            print("calculating deseq2 scores")
-            deseq2_results_200 = deseq2(pdata_200, group_by, reference)
+            print("calculating pseudo-bulk data")
+            pdata_200 = get_pseudo_bulk_data(adata, group_by, pseudo_bulk="pseudo_bulk_200")
+            try:
+                print("calculating deseq2 scores")
+                deseq2_results_200 = deseq2(pdata_200, group_by, reference)
+            except:
+                deseq2_results_200 = dict()
+                
+            try:
+                print("calculating edgeR scores")
+                edgeR_results_200 = edgeR(pdata_200, group_by, reference)
+            except:
+                edgeR_results_200 = dict()  
+                
         except:
+            print("pseudo-bulk failed")
+            pdata_200 = None
             deseq2_results_200 = dict()
-            
-        try:
-            print("calculating edgeR scores")
-            edgeR_results_200 = edgeR(pdata_200, group_by, reference)
-        except:
-            edgeR_results_200 = dict()  
-            
-    except:
-        print("pseudo-bulk failed")
-        pdata_200 = None
-        deseq2_results_200 = dict()
-        edgeR_results_200 = dict()
+            edgeR_results_200 = dict()
     
         
     return {
-        "augur": augur_results,
-        "wilcoxon": wilcoxon_results,
+        #"augur": augur_results,
+        #"wilcoxon": wilcoxon_results,
         "deseq2_100": deseq2_results_100,
         "edgeR_100": edgeR_results_100,
-        "deseq2_200": deseq2_results_200,
-        "edgeR_200": edgeR_results_200,
+        #"deseq2_200": deseq2_results_200,
+        #"edgeR_200": edgeR_results_200,
     }
 
 
 def main(dataset_path):
-    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and ("bhattacherjee" in f))]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and ("schiebinger_with_replicates" in f))]
     files = [os.path.join(dataset_path, f) for f in names]
-
+    print("processing")
+    print(files, flush=True)
+    
+    
     for f in files:
         basen = os.path.basename(f)
         p = f"{dataset_path}/benchmark_results_{basen}.csv"

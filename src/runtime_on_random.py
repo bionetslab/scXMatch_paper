@@ -41,6 +41,7 @@ def run_matching(adata, k, metric="sqeuclidean"):
     result["t_matching [s]"] = t2 - t1
     result["peak_ram_gb"] = get_peak_ram_gb()
     result["num_edges"] = num_edges
+    result["metric"] = metric
     return result
 
 
@@ -58,10 +59,9 @@ def write_row(result_dict):
 
 def process_file(file, k, idx):
     adata = ad.read_h5ad(file)
-    adata.X = adata.layers["X"]
     n_obs, n_var = adata.shape
 
-    result = run_matching(adata, k, "euclidean")
+    result = run_matching(adata, k, "sqeuclidean")
 
     result["n_obs"] = n_obs
     result["n_var"] = n_var
@@ -75,7 +75,7 @@ def process_file(file, k, idx):
 if __name__ == "__main__":
 
     files = sorted(glob.glob(os.path.join(splatter_dir, "*.h5ad")))
-    ks = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000]
+    ks = [10, 100, 5000] #[10, 20, 50, 100, 200, 500, 1000, 2000, 5000]
     combinations = list(product(files, ks))
     
     idx = int(sys.argv[1])

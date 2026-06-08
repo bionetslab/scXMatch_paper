@@ -46,7 +46,11 @@ def assign_pseudo_bulks(adata, group_by, bulk_size, label='pseudo_bulk'):
             start = i * bulk_size
             end = min((i + 1) * bulk_size, len(cell_indices))
             bulk_cells = cell_indices[start:end]
-            bulk_label = f"{condition}_bulk{i+1}"
+            if isinstance(condition, tuple):
+                condition_str = f"{str(condition[0])}_{str(condition[1])}"
+            else:
+                condition_str = condition
+            bulk_label = f"{condition_str}_bulk{i+1}"
             bulk_labels.loc[bulk_cells] = bulk_label
 
     adata.obs[label] = bulk_labels
@@ -81,20 +85,17 @@ def assign_random_split_within_group(adata, group_by, p=0.5, label="split"):
 
 
 def assign_pseudo_bulks_and_splits(adata, group_by):
-    adata = assign_pseudo_bulks(adata, group_by=group_by, bulk_size=100, label='pseudo_bulk_100')
-    adata = assign_pseudo_bulks(adata, group_by=group_by, bulk_size=200, label='pseudo_bulk_200')
-    adata = assign_pseudo_bulks(adata, group_by=group_by, bulk_size=500, label='pseudo_bulk_500')
     adata = assign_random_split_within_group(adata, group_by=group_by, p=0.5, label="split_50")
-    adata = assign_random_split_within_group(adata, group_by=group_by, p=0.4, label="split_40")
     adata = assign_random_split_within_group(adata, group_by=group_by, p=0.3, label="split_30")
-    adata = assign_random_split_within_group(adata, group_by=group_by, p=0.2, label="split_20")
     adata = assign_random_split_within_group(adata, group_by=group_by, p=0.1, label="split_10")
-    adata = assign_random_split_within_group(adata, group_by=group_by, p=0.01, label="split_1")
+    adata = assign_pseudo_bulks(adata, group_by=group_by, bulk_size=100, label='pseudo_bulk_100')
+    #adata = assign_pseudo_bulks(adata, group_by=group_by, bulk_size=200, label='pseudo_bulk_200')
+    #adata = assign_pseudo_bulks(adata, group_by=group_by, bulk_size=500, label='pseudo_bulk_500')
     return adata
 
 
 def pre_process_all(dataset_path):
-    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and "mcfarland" in f)]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and "schiebinger" in f)]
     files = [os.path.join(dataset_path, f) for f in names]
     
     print(names)
@@ -138,35 +139,15 @@ def pre_process_all(dataset_path):
         elif "sciplex" in n:
             group_by = "dose_value"
         elif "schiebinger" in n:
-            group_by = "perturbation"
+            group_by = ["replicate", "perturbation"]
         elif "bhattacherjee" in n:
             group_by = "label"
         else:
             raise ValueError("Unknown dataset")
         
-        
-        if "sciplex" in n:
-            for pathway in adata.obs["pathway"].unique():
-                subset = adata[adata.obs["pathway"].isin([pathway, "Vehicle"])].copy()
-                subset = scanpy_setup(subset)
-
-                subset = assign_pseudo_bulks_and_splits(subset, group_by)
-                name = pathway.replace("/", "_").replace(" ", "").replace(",", "_")
-                subset.write_h5ad(f"{dataset_path}/sciplex_per_pathway/{name}_processed_{n}")
-            
-            adata.obs["perturbation2"] = adata.obs["perturbation"].apply(lambda x: x.split("_")[0])
-            for compound in adata.obs["perturbation2"].unique():
-                subset = adata[adata.obs["perturbation2"].isin([compound, "control"])].copy()
-                subset = scanpy_setup(subset)
-
-                subset = assign_pseudo_bulks_and_splits(subset, group_by)
-                name = compound.replace("/", "_").replace(" ", "").replace(",", "_")
-                subset.write_h5ad(f"{dataset_path}/sciplex_per_compound/{name}_processed_{n}")
-                
-        #else:
-        #    adata = assign_pseudo_bulks_and_splits(adata, group_by)
-        #    adata.write_h5ad(f"{dataset_path}/processed_{n}")
-    
+        adata = scanpy_setup(adata)
+        adata = assign_pseudo_bulks_and_splits(adata, group_by)
+        adata.write_h5ad("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/processed_schiebinger_with_replicates.hdf5")
     
 if __name__ == "__main__":
     pre_process_all("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/raw")

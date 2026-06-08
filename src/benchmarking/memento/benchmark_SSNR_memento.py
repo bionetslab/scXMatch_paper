@@ -31,6 +31,9 @@ def get_memento_log(adata, treatment_col="stim", reference=0):
 
 def get_memento_log_with_replicate_col(adata, treatment_col="stim", covariate_col="replicate", reference=0):
     rows = list()
+    
+    
+    
     for test_group in adata.obs[treatment_col].unique():
         if test_group != reference:
             print(f"Running Memento for {test_group} vs {reference}...")
@@ -64,13 +67,11 @@ def main(raw_dataset_path, processed_dataset_path):
     names = sorted([f for f in os.listdir(raw_dataset_path) if ((f.endswith("hdf5") or f.endswith("h5ad")) and (name in f))]) #  ]
     files = [os.path.join(raw_dataset_path, f) for f in names]
     
-    
-    
     print("DATASET FILES", files)
     
     for f in files:
         basen = os.path.basename(f)
-        p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_10_SSNR_memento/memento_benchmark_results_{basen}.csv"
+        p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_10_SSNR_memento/memento_benchmark_results_{basen}_with_replicates.csv"
         if os.path.exists(p):
             print(f"skipping {p}, results already exist.", flush=True, file=sys.stderr)
             continue
@@ -150,7 +151,9 @@ def main(raw_dataset_path, processed_dataset_path):
 
         for i in datasets:
             current_dataset = datasets[i]
-            if ("schiebinger" in name) or ("norman" in name):
+            if "schiebinger" in name:
+                processed_p = os.path.join(processed_dataset_path, f"processed_schiebinger_with_replicates.hdf5")
+            if "norman" in name:
                 processed_p = os.path.join(processed_dataset_path, f"processed_{basen.split('.')[0]}.hdf5")
             if "mcfarland" in name:
                 processed_p = os.path.join(processed_dataset_path, f"processed_{basen.split('.')[0]}_{i+1}.hdf5")
@@ -167,7 +170,7 @@ def main(raw_dataset_path, processed_dataset_path):
                 subset.obs[["split_50", "split_10", "split_30"]] = processed_adata.obs.loc[subset.obs_names, ["split_50", "split_10", "split_30"]]
                 for group_by_split in ["split_50", "split_10", "split_30"]:
                     subset.obs[group_by_split] = subset.obs[group_by_split].astype(float)
-                    memento_log_df = get_memento_log(subset, treatment_col=group_by_split, reference=0)    
+                    memento_log_df = get_memento_log_with_replicate_col(subset, treatment_col=group_by_split, reference=0)    
                     memento_log_df["testgroup"] = test_group
                     memento_log_df["group_by"] = group_by_split
                     memento_log_df["len_subset"] = len(subset)

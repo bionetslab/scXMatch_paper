@@ -10,7 +10,7 @@ import sys
 import resource
 from itertools import product
 
-splatter_dir = "/home/woody/iwbn/iwbn007h/xm_splatter_data/splatter_sims"
+splatter_dir = "/home/woody/iwbn/iwbn007h/xm_splatter_data_recovered/splatter_sims"
 out_file = "/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/0_1_splatter_runtime/splatter_results.csv"
 
 def get_peak_ram_gb():
@@ -26,14 +26,14 @@ def get_peak_ram_gb():
     return total_gb
 
 
-def run_test(adata, k):
+def run_test(adata, k, metric):
 
     start_time = time()
 
     result = test(
         adata,
         k=k,
-        metric="sqeuclidean",
+        metric=metric,
         group_by="Group",
         reference="Group1",
         test_group="Group2"
@@ -47,7 +47,7 @@ def run_test(adata, k):
     return result
 
 
-def run_matching(adata, k, metric="sqeuclidean"):
+def run_matching(adata, k, metric):
 
     t0 = time()
     xm._match._kNN(adata, k, metric)
@@ -62,6 +62,7 @@ def run_matching(adata, k, metric="sqeuclidean"):
     result["t_matching [s]"] = t2 - t1
     result["peak_ram_gb"] = get_peak_ram_gb()
     result["num_edges"] = num_edges
+    result["metric"] = metric
     return result
 
 
@@ -84,7 +85,7 @@ def process_file(file, k, idx):
     adata.X = adata.layers["X"]
     n_obs, n_var = adata.shape
 
-    result = run_matching(adata, k, "euclidean")
+    result = run_matching(adata, k, "sqeuclidean")
 
     result["n_obs"] = n_obs
     result["n_var"] = n_var
@@ -92,6 +93,7 @@ def process_file(file, k, idx):
     result["k"] = k
     result["slurm_job_id"] = os.environ.get("SLURM_JOB_ID")
     result["slurm_array_idx"] =  idx
+
     write_row(result)
 
 

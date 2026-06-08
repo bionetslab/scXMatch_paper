@@ -1,18 +1,15 @@
-import pertpy as pt
 import anndata as ad
-import numpy as np
 import pandas as pd
 import os
 import sys
 from benchmark_monotonicity import * 
-from benchmark_monotonicity_edist import get_e_distance
 
 def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):
     dataset_name = sys.argv[1]
     names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and (dataset_name in f))]
     files = [os.path.join(dataset_path, f) for f in names]
 
-    level = dataset_path.split("_")[-1]
+    level = "schiebinger_with_replicates"
     os.makedirs(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_3_var_benchmark/{level}/", exist_ok=True)
     
     for f in files:
@@ -32,6 +29,7 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):
         elif "schiebinger" in f:
             group_by = "perturbation"
             reference = "control"            
+        
         elif "bhatta" in f:
             group_by = "label"
             reference = "Maintenance_Cocaine"
@@ -56,19 +54,15 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):
                     if os.path.exists(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_3_var_benchmark/{level}/edist_benchmark_results_{os.path.basename(f)}_{test_group}_{group_by_split}_ref_{group_by_split_reference}.csv"):
                         print("skipi")
                         continue
-                    try:
-                        subset_2 = adata[( (adata.obs[group_by] == reference) & (adata.obs[group_by_split_reference] == 1) ), :].obs.index
-                        print(adata[list(subset_1) + list(subset_2)].obs[group_by].value_counts())
-                        results = get_e_distance(adata[list(subset_1) + list(subset_2)], group_by, reference=reference)
-                        # results_df = pd.DataFrame(results)
-                        results_df = pd.DataFrame.from_dict(
-                            results,
-                            orient="index",
-                            columns=["pvalue_adj"]
-                        )        
-                        results_df.to_csv(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_3_var_benchmark/{level}/edist_benchmark_results_{os.path.basename(f)}_{test_group}_{group_by_split}_ref_{group_by_split_reference}.csv", index=True)
-                    except:
-                        continue
+                    subset_2 = adata[( (adata.obs[group_by] == reference) & (adata.obs[group_by_split_reference] == 1) ), :].obs.index
+                    adata_subset = adata[list(subset_1) + list(subset_2)].copy()
+                    print(adata_subset)
+                    print(adata_subset.obs[[group_by, 'pseudo_bulk_100']].value_counts())
+                    results = benchmark_all(adata_subset, group_by, reference=reference)
+                    print(results)
+                    results_df = pd.DataFrame(results)   
+                    results_df.to_csv(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_3_var_benchmark/{level}/edist_benchmark_results_{os.path.basename(f)}_{test_group}_{group_by_split}_ref_{group_by_split_reference}.csv", index=True)
+
                 
 if __name__ == "__main__":
     main()
