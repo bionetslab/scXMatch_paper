@@ -32,8 +32,11 @@ def main():
                 continue
             print(test_group)
             subset = adata[adata.obs[group_by].isin([reference, test_group])].copy()
-            p, z, s = test(subset, group_by=group_by, reference=reference, test_group=test_group, k=k)
-        
+            result = test(subset, group_by=group_by, reference=reference, test_group=test_group, k=k)
+            p = result["p_value"]
+            s = result["coverage"]
+            z = result["z_score"]
+            
             matching = subset.obs[f'XMatch_partner_{test_group}_vs_{reference}'].dropna().reset_index().values.astype(str)
             used_elements = sorted(list(chain.from_iterable(matching)))
             

@@ -69,7 +69,7 @@ def read_effect_size_xm_monotonicity(xm_effect_size_results):
     for dataset in xm_effect_size_results:
         if dataset == "schiebinger":
             xm_effect_size_results[dataset]["test_group"] = xm_effect_size_results[dataset]["test_group"].apply(lambda x: float(x[1:]) if x.startswith("D") else float(x))
-        xm_effect_size_results[dataset] = 1 - xm_effect_size_results[dataset].set_index("test_group")[["effect_size"]]
+        xm_effect_size_results[dataset] = xm_effect_size_results[dataset].set_index("test_group")[["effect_size"]]
     return xm_effect_size_results
 
 # -------- Functions to read in SSNR results for different metrics --------
@@ -155,7 +155,7 @@ def read_effect_size_xm_SSNR(xm_effect_size_results_within):
     for dataset in xm_effect_size_results:
         xm_effect_size_results[dataset] = xm_effect_size_results[dataset][["test_group", "effect_size", "group_by"]]
         xm_effect_size_results[dataset].rename({"group_by": "split"}, inplace=True, axis=1)
-        xm_effect_size_results[dataset]["effect_size"] = 1 - xm_effect_size_results[dataset]["effect_size"]
+        xm_effect_size_results[dataset]["effect_size"] = xm_effect_size_results[dataset]["effect_size"]
         xm_effect_size_results[dataset]["split"] = xm_effect_size_results[dataset]["split"].apply(lambda x: x.split("_")[1])
         xm_effect_size_results[dataset]["test_group"] = xm_effect_size_results[dataset]["test_group"].astype(str)
         xm_effect_size_results[dataset].set_index(["test_group", "split"], inplace=True)
@@ -232,7 +232,7 @@ def read_effect_size_var(xm_effect_size_results_var):
     xm_effect_size_results = {f.split("processed_")[1].split("_results.txt")[0]: pd.read_csv(os.path.join(xm_effect_size_results_var, f)) for f in os.listdir(xm_effect_size_results_var) if f.endswith("txt")}
     for dataset in xm_effect_size_results:
         xm_effect_size_results[dataset] = xm_effect_size_results[dataset][["test_group", "effect_size", "split_1", "split_2"]]
-        xm_effect_size_results[dataset]["effect_size"] = 1 - xm_effect_size_results[dataset]["effect_size"]
+        xm_effect_size_results[dataset]["effect_size"] = xm_effect_size_results[dataset]["effect_size"]
         xm_effect_size_results[dataset]["split_1"] = xm_effect_size_results[dataset]["split_1"].apply(lambda x: x.split("_")[1]).astype(str)
         xm_effect_size_results[dataset]["split_2"] = xm_effect_size_results[dataset]["split_2"].apply(lambda x: x.split("_")[1]).astype(str)
         xm_effect_size_results[dataset]["test_group"] = xm_effect_size_results[dataset]["test_group"].astype(str)
