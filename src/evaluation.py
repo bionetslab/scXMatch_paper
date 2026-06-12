@@ -105,7 +105,6 @@ def get_ssnr_df(monotonicity_result_df,
     xm_effect_size_dfs_results_within = read_effect_size_xm_SSNR(xm_effect_size_results_within)
     
     all_within = dict()
-
     for df in monotonicity_result_df:
         conc = pd.concat([bm_results_dfs_within[df], 
                           xm_results_dfs_within[df],

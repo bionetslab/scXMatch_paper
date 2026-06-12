@@ -74,8 +74,8 @@ def read_effect_size_xm_monotonicity(xm_effect_size_results):
 
 # -------- Functions to read in SSNR results for different metrics --------
 def read_memento_SSNR(mem_results_within):
-    # TODO divide by max possible #DEGs for SV?
     memento_results = {f.split("memento_benchmark_results_")[1].split(".")[0]: pd.read_csv(os.path.join(mem_results_within, f), index_col=0) for f in os.listdir(mem_results_within) if (f.endswith("csv") and not f.startswith("with_cov"))}
+
     memento_results_per_dataset = dict()
     
     for dataset in memento_results:
@@ -190,9 +190,8 @@ def read_xm_var(xm_results_var):
     return xm_results_dfs_var
     
 def read_memento_var(memento_results_var):
-    memento_results = {f.split("memento_benchmark_results_")[1].split(".")[0]: pd.read_csv(os.path.join(memento_results_var, f), index_col=0) for f in os.listdir(memento_results_var) if (f.endswith("csv") and not f.startswith("with_cov"))}
+    memento_results = {f.split("memento_benchmark_results_")[1].split(".")[0]: pd.read_csv(os.path.join(memento_results_var, f), index_col=0) for f in os.listdir(memento_results_var) if (f.endswith("csv"))}
     memento_results_per_dataset = dict()
-
     for dataset in memento_results:
         memento_results[dataset].drop("test_group", axis=1, inplace=True, errors="ignore")
         memento_results[dataset].rename({"#DEGs": "memento", "testgroup": "test_group"}, inplace=True, axis=1)
@@ -225,6 +224,7 @@ def read_memento_var(memento_results_var):
         memento_results_per_dataset[dataset]["split_2"] = memento_results_per_dataset[dataset]["split_2"].astype(str)
 
         memento_results_per_dataset[dataset].set_index(["test_group", "split_1", "split_2"], inplace=True)
+    
     return memento_results_per_dataset
 
 
