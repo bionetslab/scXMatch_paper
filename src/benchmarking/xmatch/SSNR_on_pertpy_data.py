@@ -11,27 +11,39 @@ np.random.seed(52)
 from importlib import reload
 
 
-def evaluate(name, group_by, data_path="/data/bionets/datasets/scrnaseq_ji/"):
-    logging.basicConfig(
-        filename=f"../../../evaluation_results/1_7_monotonicity_SSNR_effect_size/{os.path.splitext(name)[0]}_results.txt",
-        level=logging.INFO,
-        format="%(message)s"
-    )
-    
+def evaluate(name, data_path="/data/bionets/datasets/scrnaseq_ji/"):
+
     first_row = True
 
-    subsets = [f for f in os.listdir(data_path) if (name in f) and f.endswith(".hdf5")]
+    subsets = [f for f in os.listdir(data_path) if (name in f) and f.endswith(".h5ad")]
             
     for f in subsets:
+        # create a dedicated logger per file to ensure one logfile per dataset
+        log_fname = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_7_SSNR_effect_size/{os.path.basename(f).split('.')[0]}_results.txt"
+        logger_name = os.path.basename(f).split('.')[0]
+        logger = logging.getLogger(logger_name)
+        # remove existing handlers if any (important when running in same process)
+        for h in list(logger.handlers):
+            logger.removeHandler(h)
+            try:
+                h.close()
+            except Exception:
+                pass
+        fh = logging.FileHandler(log_fname)
+        fh.setLevel(logging.INFO)
+        fh.setFormatter(logging.Formatter("%(message)s"))
+        logger.addHandler(fh)
+        logger.setLevel(logging.INFO)
+    
         adata = read_h5ad(os.path.join(data_path, f))
 
         if "mcfarland" in f:
             group_by = "pert_time"
             reference = "control"
             
-        elif "norman" in f:
-            group_by = "n_guides"
-            reference = "control"
+        elif "norman_" in f:
+            group_by = "label"
+            reference = 0
             
         elif "schiebinger" in f:
             group_by = "perturbation"
@@ -54,15 +66,20 @@ def evaluate(name, group_by, data_path="/data/bionets/datasets/scrnaseq_ji/"):
                     results = test(subset, group_by=group_by_split, reference="0.0", test_group="1.0", rank=False, metric="sqeuclidean", k=100)    
                     if first_row:
                         row = ",".join(list(results.keys()))   
-                        logging.info(f"test_group,group_by,len_subset,{row}")
+                        logger.info(f"test_group,group_by,len_subset,{row}")
                         first_row = False
                         
                     row = ",".join([str(results[key]) for key in results])   
-                    logging.info(f"{test_group},{group_by_split},{len(subset)},{row}")
+                    logger.info(f"{test_group},{group_by_split},{len(subset)},{row}")
                 except:
-                    logging.info(f"{test_group},{group_by},failed")
-    logging.shutdown()
-    reload(logging)
+                    logger.info(f"{test_group},{group_by},failed")
+        # close handlers for this logger
+        for h in list(logger.handlers):
+            logger.removeHandler(h)
+            try:
+                h.close()
+            except Exception:
+                pass
     return 
 
 
@@ -79,12 +96,12 @@ if __name__ == "__main__":
     data_path= "/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"
 
     if args.dataset == "schiebinger":
-        evaluate("processed_schiebinger", group_by="perturbation", data_path=data_path)
+        evaluate("processed_schiebinger", data_path=data_path)
     elif "mcfarland" in args.dataset:
         for dataset in ["processed_mcfarland_1.hdf5", "processed_mcfarland_2.hdf5", "processed_mcfarland_3.hdf5", "processed_mcfarland_4.hdf5", "processed_mcfarland_5.hdf5"]:
-            evaluate(dataset, group_by="pert_time", data_path=data_path)
+            evaluate(dataset, data_path=data_path)
     elif args.dataset == "norman":
-        evaluate("processed_norman", group_by="n_guides", data_path=data_path)
+        evaluate("processed_norman", data_path=data_path)
     elif args.dataset == "bhattacherjee":
         for dataset in ["processed_bhattacherjee_Astro.hdf5", "processed_bhattacherjee_Endo.hdf5", "processed_bhattacherjee_Excitatory.hdf5"]:
-            evaluate(dataset, group_by="label", data_path=data_path)
+            evaluate(dataset, data_path=data_path)

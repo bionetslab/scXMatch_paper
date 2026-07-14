@@ -11,30 +11,35 @@ from importlib import reload
 
 
 def evaluate(name, group_by, k, rank=False, metric="sqeuclidean", data_path="/data/bionets/datasets/scrnaseq_ji/"):
-    logging.basicConfig(
-        filename=f"../../../evaluation_results/1_8_monotonicity_SV_effect_size/{os.path.splitext(name)[0]}_results.txt",
-        level=logging.INFO,
-        format="%(message)s"
-    )
-
-    if "mcfarland" in name:
-        group_by = "pert_time"
-        reference = "control"
-        
-    elif "norman" in name:
-        group_by = "n_guides"
-        reference = "control"
-        
-    elif "schiebinger" in name:
-        group_by = "perturbation"
-        reference = "control"
-        
-    elif "bhatta" in name:
-        group_by = "label"
-        reference = "Maintenance_Cocaine"
-    subsets = [f for f in os.listdir(data_path) if (name in f) and f.endswith(".hdf5")]
-    
+    subsets = [f for f in os.listdir(data_path) if (name in f) and f.endswith(".h5ad")]
     for f in subsets:
+        if "mcfarland" in name:
+            group_by = "pert_time"
+            reference = "control"
+            
+        elif "norman_" in name:
+            group_by = "label"
+            reference = 0
+            
+        elif "schiebinger" in name:
+            group_by = "perturbation"
+            reference = "control"
+            
+        elif "bhatta" in name:
+            group_by = "label"
+            reference = "Maintenance_Cocaine"
+        
+        log_file = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_8_SV_effect_size/{os.path.basename(f).split('.')[0]}_results.txt"
+        logger = logging.getLogger(f"xmatch_{os.path.basename(f)}")
+        logger.propagate = False
+        logger.setLevel(logging.INFO)
+        for handler in list(logger.handlers):
+            logger.removeHandler(handler)
+            handler.close()
+        handler = logging.FileHandler(log_file, mode="w")
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        logger.addHandler(handler)
+
         adata = read_h5ad(os.path.join(data_path, f))
         adata.obs[group_by] = adata.obs[group_by].astype(str)
         groups =  adata.obs[group_by].unique()
@@ -48,11 +53,11 @@ def evaluate(name, group_by, k, rank=False, metric="sqeuclidean", data_path="/da
                         subset_2 = adata[( (adata.obs[group_by] == reference) & (adata.obs[group_by_split_reference] == 1) ), :].obs.index
                         results = test(adata[list(subset_1) + list(subset_2)], group_by=group_by, reference=reference, test_group=test_group, rank=rank, metric=metric, k=k)   
                         row = ",".join([str(results[key]) for key in results])    
-                        logging.info(f"{test_group},{group_by_split},{group_by_split_reference},{k},{row}")    
+                        logger.info(f"{test_group},{group_by_split},{group_by_split_reference},{k},{row}")    
                     except:
-                        logging.info(f"{test_group},{group_by_split},{group_by_split_reference},failed")
-    logging.shutdown()
-    reload(logging)
+                        logger.info(f"{test_group},{group_by_split},{group_by_split_reference},failed")
+        handler.close()
+        logger.removeHandler(handler)
     return 
 
 

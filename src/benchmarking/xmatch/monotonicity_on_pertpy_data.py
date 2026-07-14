@@ -24,22 +24,22 @@ def get_xm_log(adata, group_by, reference, k):
 
 def main(dataset_path):
     name = sys.argv[1]
-    names = sorted([f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and (name in f))])
+    names = sorted([f for f in os.listdir(dataset_path) if (f.endswith("h5ad") and (name in f))])
     files = [os.path.join(dataset_path, f) for f in names]
     print("DATASET NAME", name)
     
     for f in files:
         basen = os.path.basename(f)
-        p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/2_1_ATACseq/results_{basen}_effect_size.csv"
+        p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_6_monotonicity_effect_size/results_{basen}_effect_size.csv"
 
         adata = ad.read_h5ad(f)
         if "mcfarland" in f:
             group_by = "pert_time"
             reference = "control"
             
-        elif "norman" in f:
-            group_by = "n_guides"
-            reference = "control"
+        elif "norman_" in f:
+            group_by = "label"
+            reference = "0"
             
         elif "sciplex" in f:
             group_by = "dose_value"
@@ -65,4 +65,4 @@ def main(dataset_path):
         
 
 if __name__ == "__main__":
-    main("/home/woody/iwbn/iwbn007h/data/scATACseq/")
+    main("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji")
