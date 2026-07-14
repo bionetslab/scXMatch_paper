@@ -70,15 +70,13 @@ def get_e_distance_log(adata, group_by, reference, subsampling=True):
 
 def main(dataset_path):
     name = sys.argv[1]
-    if name in ["norman", "schiebinger"]:
-        subset = int(sys.argv[2])
-    names = sorted([f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and (name in f))]) #  ]
+    names = sorted([f for f in os.listdir(dataset_path) if (f.endswith("h5ad") and (name in f))]) #  ]
     files = [os.path.join(dataset_path, f) for f in names]
     print("DATASET NAME", name)
     
     for f in files:
         basen = os.path.basename(f)
-        p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_4_edist/no_subsampling_edist_benchmark_results_{basen}_{subset}_with_10k.csv"
+        p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_4_edist/subsampling_edist_benchmark_results_{basen}_with_10k.csv"
         if os.path.exists(p):
             print(f"not skipping {p}, results already exist.", flush=True, file=sys.stderr)
             #continue
@@ -91,8 +89,8 @@ def main(dataset_path):
             reference = "control"
             
         elif "norman" in f:
-            group_by = "n_guides"
-            reference = "control"
+            group_by = "label"
+            reference = "0"
             
         elif "sciplex" in f:
             group_by = "dose_value"
@@ -111,23 +109,23 @@ def main(dataset_path):
         
         adata = ad.read_h5ad(f)
         adata.obs[group_by] = adata.obs[group_by].astype(str)
-        if name == "norman":
-            assert ((subset == 1) or (subset == 2))
-            subset = adata[adata.obs[group_by].isin(["control", str(subset)])]
+        #if name == "norman":
+        #    assert ((subset == 1) or (subset == 2))
+        #    subset = adata[adata.obs[group_by].isin(["control", str(subset)])]
         
-        if name == "schiebinger":
-            assert ((subset == 0) or (subset == 1) or (subset == 2) or (subset == 3))
-            if subset == 0:
-                subset = adata[adata.obs[group_by].isin(["control", 'D8', 'D2', 'D4', 'D6', 'D3.5', 'D5', 'D4.5', 'D2.5', 'D3', 'D5.5'])]
-            elif subset == 1:
-                subset = adata[adata.obs[group_by].isin(["control", 'D7', 'D7.5', 'D15.5', 'D16.5', 'D17.5', 'D15', 'D18', 'D14'])]
-            elif subset == 2:
-                subset = adata[adata.obs[group_by].isin(["control", 'D17', 'D8.5', 'D16', 'D6.5', 'D9', 'D14.5', 'D11', 'D12', 'D10'])]
-            else:
-                subset = adata[adata.obs[group_by].isin(["control", 'D13.5', 'D9.5', 'D12.5', 'D11.5', 'D13', 'D10.5', 'D1.5'])]
+        #if name == "schiebinger":
+        #    assert ((subset == 0) or (subset == 1) or (subset == 2) or (subset == 3))
+        #    if subset == 0:
+        #        subset = adata[adata.obs[group_by].isin(["control", 'D8', 'D2', 'D4', 'D6', 'D3.5', 'D5', 'D4.5', 'D2.5', 'D3', 'D5.5'])]
+        #    elif subset == 1:
+        #        subset = adata[adata.obs[group_by].isin(["control", 'D7', 'D7.5', 'D15.5', 'D16.5', 'D17.5', 'D15', 'D18', 'D14'])]
+        #    elif subset == 2:
+        #        subset = adata[adata.obs[group_by].isin(["control", 'D17', 'D8.5', 'D16', 'D6.5', 'D9', 'D14.5', 'D11', 'D12', 'D10'])]
+        #    else:
+        #        subset = adata[adata.obs[group_by].isin(["control", 'D13.5', 'D9.5', 'D12.5', 'D11.5', 'D13', 'D10.5', 'D1.5'])]
 
         
-        results_df = get_e_distance_log(subset, group_by, reference, subsampling=False)
+        results_df = get_e_distance_log(adata, group_by, reference, subsampling=True)
         results_df.to_csv(p, index=False)
 
         

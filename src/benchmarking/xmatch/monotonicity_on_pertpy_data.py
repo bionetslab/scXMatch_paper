@@ -4,6 +4,9 @@ import pandas as pd
 from scxmatch import test
 import sys
 import time
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from dataset_config import get_config
 
 
 def get_xm_log(adata, group_by, reference, k):
@@ -33,28 +36,7 @@ def main(dataset_path):
         p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_6_monotonicity_effect_size/results_{basen}_effect_size.csv"
 
         adata = ad.read_h5ad(f)
-        if "mcfarland" in f:
-            group_by = "pert_time"
-            reference = "control"
-            
-        elif "norman_" in f:
-            group_by = "label"
-            reference = "0"
-            
-        elif "sciplex" in f:
-            group_by = "dose_value"
-            reference = "0.0"
-            
-        elif "schiebinger" in f:
-            group_by = "perturbation"
-            reference = "control"
-            
-        elif "bhatta" in f:
-            group_by = "label"
-            reference = "Maintenance_Cocaine"
-            
-        else:
-            raise ValueError("Unknown dataset")
+        group_by, reference = get_config(f)
         
         adata = ad.read_h5ad(f)
         adata.obs[group_by] = adata.obs[group_by].astype(str)

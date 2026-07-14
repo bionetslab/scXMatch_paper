@@ -101,11 +101,11 @@ def main(raw_dataset_path, processed_dataset_path):
             group_by = "stim"
             reference = 0
                 
-        elif "norman" in f:
+        elif "norman_" in f:
             datasets = dict()
-            group_by = "stim"
+            group_by = "label"
             reference = 0
-            subset = adata[adata.obs['stim'].isin([0, 1, 2])].copy()
+            subset = adata[adata.obs[group_by].isin([0, 1, 2])].copy()
             subset.X = subset.layers['counts'].astype(np.int32)
             subset.X = csr_matrix(subset.X)
             datasets[0] = subset
@@ -153,7 +153,7 @@ def main(raw_dataset_path, processed_dataset_path):
             if "schiebinger" in name:
                 processed_p = os.path.join(processed_dataset_path, f"processed_schiebinger_with_replicates.hdf5")
             if "norman" in name:
-                processed_p = os.path.join(processed_dataset_path, f"processed_{basen.split('.')[0]}.hdf5")
+                processed_p = os.path.join(processed_dataset_path, f"processed_{basen.split('.')[0]}.h5ad")
             if "mcfarland" in name:
                 processed_p = os.path.join(processed_dataset_path, f"processed_{basen.split('.')[0]}_{i+1}.hdf5")
             if "bhatta" in name:
@@ -171,7 +171,7 @@ def main(raw_dataset_path, processed_dataset_path):
                     subset_1 = current_dataset[( (current_dataset.obs[group_by] == test_group) & (current_dataset.obs[group_by_split] == 1) ), :].obs.index
                     for group_by_split_reference in ["split_50", "split_10", "split_30"]:
                         subset_2 = current_dataset[( (current_dataset.obs[group_by] == reference) & (current_dataset.obs[group_by_split_reference] == 1) ), :].obs.index
-                        memento_log_df = get_memento_log_with_replicate_col(current_dataset[list(subset_1) + list(subset_2)], treatment_col=group_by, reference=reference)   
+                        memento_log_df = get_memento_log(current_dataset[list(subset_1) + list(subset_2)], treatment_col=group_by, reference=reference)   
                         memento_log_df["testgroup"] = test_group
                         memento_log_df["group_by_split_1"] = group_by_split
                         memento_log_df["group_by_split_2"] = group_by_split_reference

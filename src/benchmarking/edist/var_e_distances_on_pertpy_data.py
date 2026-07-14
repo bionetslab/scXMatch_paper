@@ -1,74 +1,17 @@
-import pertpy as pt
 import anndata as ad
-import numpy as np
 import pandas as pd
 import os
 import sys
-import scanpy as sc
-import time
-
-def get_e_distance_log(adata, group_by, reference, subsampling):
-    group_counts = adata.obs[group_by].value_counts()
-    if subsampling:
-        print("WARNING: subsampling enabled, results will be based on a subset of the data.", flush=True, file=sys.stderr)
-    # --- Balance groups ---
-        min_count = group_counts.min()
-
-        print(f"Minimum group size: {min_count}", flush=True, file=sys.stderr)
-
-        sampled_indices = []
-        relative_support_dict = dict()
-
-        for g in group_counts.index:
-            idx = np.where(adata.obs[group_by] == g)[0]
-            sampled = np.random.choice(idx, min_count, replace=False)
-            sampled_indices.append(sampled)
-            relative_support_dict[g] = len(sampled) / len(idx)
-
-        sampled_indices = np.concatenate(sampled_indices)
-        subset = adata[sampled_indices].copy()
-    else:
-        relative_support_dict = dict()
-        for g in group_counts.index:
-            relative_support_dict[g] = 1
-        subset = adata.copy()
-    
-    # --- PCA ---
-    n_comps = min(50, subset.shape[1] - 1, subset.shape[0] - 1)
-    t1 = time.time()
-    sc.pp.pca(subset, n_comps=n_comps)
-    t2 = time.time()
-    time_pca = t2 - t1
-    print(f"PCA took {time_pca:.2f} seconds", flush=True, file=sys.stderr)
-
-    # --- Distance test ---
-    
-    rows = list()
-    for group in group_counts.index:
-        if group == reference:
-            continue
-        t3 = time.time()
-        Distance = pt.tools.Distance(metric="edistance")
-
-        X = subset.obsm["X_pca"][subset.obs[group_by] == group]
-        Y = subset.obsm["X_pca"][subset.obs[group_by] == reference]
-        d = Distance(X, Y)
-        t4 = time.time()
-        rows.append({
-            "testgroup": group,
-            "reference": reference,
-            "relative_support": relative_support_dict[group],
-            "time_pca": time_pca,
-            "time_edist_test": t4 - t3,
-            "distance": d})
-    results_df = pd.DataFrame(rows)
-    return results_df
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from dataset_config import get_config
+from monotonicity_e_distances_on_pertpy_data import get_e_distance_log
 
 
 def main(dataset_path):
-    names = sorted([f for f in os.listdir(dataset_path) if f.endswith("hdf5")])
+    name = sys.argv[1]
+    names = sorted([f for f in os.listdir(dataset_path) if (f.endswith("h5ad") and (name in f))])
     files = [os.path.join(dataset_path, f) for f in names]
-    subsampling = True
+    subsampling = False
     print("files", files)
     
     for f in files:
@@ -81,28 +24,7 @@ def main(dataset_path):
         if os.path.exists(p):
             continue
         adata = ad.read_h5ad(f)
-        if "mcfarland" in f:
-            group_by = "pert_time"
-            reference = "control"
-            
-        elif "norman" in f:
-            group_by = "n_guides"
-            reference = "control"
-            
-        elif "schiebinger" in f:
-            group_by = "perturbation"
-            reference = "control"
-            
-        elif "bhatta" in f:
-            group_by = "label"
-            reference = "Maintenance_Cocaine"
-        
-        elif "Mimitou" in f:
-            group_by = "perturbation"
-            reference = "control"
-            
-        else:
-            raise ValueError("Unknown dataset")
+        group_by, reference = get_config(f)
         
         adata = ad.read_h5ad(f)
         adata = adata[adata.obs[group_by].notna()].copy()

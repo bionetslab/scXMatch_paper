@@ -7,12 +7,11 @@ from benchmark_monotonicity import *
 def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):    
     dataset_name = sys.argv[1]
     #test_group = sys.argv[2]
-    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and (dataset_name in f))]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("h5ad") and (dataset_name in f))]
     files = [os.path.join(dataset_path, f) for f in names]
     print(names, flush=True, file=sys.stderr)
     print(files, flush=True, file=sys.stderr)
-    level = "schiebinger_with_replicates"
-    os.makedirs(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_2_SSNR_benchmark/{level}/", exist_ok=True)
+    #os.makedirs(f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_2_SSNR_benchmark/", exist_ok=True)
     
     for f in files:
         adata = ad.read_h5ad(f)
@@ -21,8 +20,8 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):
             reference = "control"
             
         elif "norman" in f:
-            group_by = "n_guides"
-            reference = "control"
+            group_by = "label"
+            reference = "0"
             
         elif "sciplex" in f:
             group_by = "dose_value"
@@ -31,6 +30,7 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):
         elif "schiebinger" in f:
             group_by = "perturbation"
             reference = "control"            
+            
         elif "bhatta" in f:
             group_by = "ori_label"
             adata.obs.rename({"label": "ori_label"}, axis=1, inplace=True)
@@ -51,7 +51,7 @@ def main(dataset_path="/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/"):
 
             subset = adata[adata.obs[group_by].isin([test_group]), :].copy()
             for group_by_split in ["split_10", "split_30", "split_50"]:
-                p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_2_SSNR_benchmark/{level}/benchmark_results_{os.path.basename(f)}_{test_group}_{group_by_split}.csv"
+                p = f"/home/woody/iwbn/iwbn007h/scXMatch_paper/evaluation_results/1_2_SSNR_benchmark/benchmark_results_{os.path.basename(f)}_{test_group}_{group_by_split}.csv"
                 if os.path.exists(p):
                     continue
                 subset.obs[group_by_split] = subset.obs[group_by_split].astype(str)

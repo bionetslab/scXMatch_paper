@@ -91,8 +91,8 @@ def main(dataset_path):
             reference = "control"
             
         elif "norman" in f:
-            group_by = "n_guides"
-            reference = "control"
+            group_by = "label"
+            reference = "0"
             
         elif "sciplex" in f:
             group_by = "dose_value"

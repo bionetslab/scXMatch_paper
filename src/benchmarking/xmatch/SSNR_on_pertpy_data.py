@@ -9,6 +9,8 @@ import argparse
 faulthandler.enable()
 np.random.seed(52)
 from importlib import reload
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from dataset_config import get_config
 
 
 def evaluate(name, data_path="/data/bionets/datasets/scrnaseq_ji/"):
@@ -37,21 +39,7 @@ def evaluate(name, data_path="/data/bionets/datasets/scrnaseq_ji/"):
     
         adata = read_h5ad(os.path.join(data_path, f))
 
-        if "mcfarland" in f:
-            group_by = "pert_time"
-            reference = "control"
-            
-        elif "norman_" in f:
-            group_by = "label"
-            reference = 0
-            
-        elif "schiebinger" in f:
-            group_by = "perturbation"
-            reference = "control"
-            
-        elif "bhatta" in f:
-            group_by = "label"
-            reference = "Maintenance_Cocaine"
+        group_by, reference = get_config(f)
             
         adata.obs[group_by] = adata.obs[group_by].astype(str)
         groups =  adata.obs[group_by].unique()
@@ -80,6 +68,7 @@ def evaluate(name, data_path="/data/bionets/datasets/scrnaseq_ji/"):
                 h.close()
             except Exception:
                 pass
+        first_row = True
     return 
 
 

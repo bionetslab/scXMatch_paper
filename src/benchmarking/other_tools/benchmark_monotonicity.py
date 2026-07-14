@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import os
 import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from dataset_config import get_config
 
 
 def get_DEGs(result_df, alpha=0.05, bonferroni=True):
@@ -19,7 +21,9 @@ def augur_scores(adata, group_by, reference):
     for test_group in groups:
         if test_group == reference:
             continue
-        subset = adata[adata.obs[group_by].isin([reference, test_group])]
+        subset = adata[adata.obs[group_by].isin([reference, test_group])].copy()
+        if group_by != "label" and "label" in subset.obs.columns:
+            subset.obs = subset.obs.drop(columns="label")
         ag_rfc = pt.tl.Augur("random_forest_classifier")
         loaded_data = ag_rfc.load(subset, label_col=group_by, cell_type_col="cell_type")
         _, v_results = ag_rfc.predict(loaded_data, subsample_size=20, n_threads=16, select_variance_features=True, span=1)
@@ -92,20 +96,19 @@ def benchmark_all(adata, group_by, reference):
     Returns:
         Dictionary with results from each method
     """
-    if 0:
-        try:
-            print("calculating augur scores")
-            augur_results = augur_scores(adata, group_by, reference)
-        except:
-            print("augur failed")
-            augur_results = dict()
-        
-        try:
-            print("calculating wilcoxon scores")
-            wilcoxon_results = wilcoxon(adata, group_by, reference)
-        except:
-            print("wilcoxon failed")
-            wilcoxon_results = dict()
+    augur_results = augur_scores(adata, group_by, reference)
+    try:
+        print("calculating augur scores")
+    except:
+        print("augur failed")
+        augur_results = dict()
+    
+    try:
+        print("calculating wilcoxon scores")
+        wilcoxon_results = wilcoxon(adata, group_by, reference)
+    except:
+        print("wilcoxon failed")
+        wilcoxon_results = dict()
         
     print("calculating pseudo-bulk data")
     pdata_100 = get_pseudo_bulk_data(adata, group_by, pseudo_bulk="pseudo_bulk_100")
@@ -113,43 +116,17 @@ def benchmark_all(adata, group_by, reference):
             
     print("calculating edgeR scores")
     edgeR_results_100 = edgeR(pdata_100, group_by, reference)
-
-    
-    if 0:
-        try:
-            print("calculating pseudo-bulk data")
-            pdata_200 = get_pseudo_bulk_data(adata, group_by, pseudo_bulk="pseudo_bulk_200")
-            try:
-                print("calculating deseq2 scores")
-                deseq2_results_200 = deseq2(pdata_200, group_by, reference)
-            except:
-                deseq2_results_200 = dict()
-                
-            try:
-                print("calculating edgeR scores")
-                edgeR_results_200 = edgeR(pdata_200, group_by, reference)
-            except:
-                edgeR_results_200 = dict()  
-                
-        except:
-            print("pseudo-bulk failed")
-            pdata_200 = None
-            deseq2_results_200 = dict()
-            edgeR_results_200 = dict()
-    
         
     return {
-        #"augur": augur_results,
-        #"wilcoxon": wilcoxon_results,
+        "augur": augur_results,
+        "wilcoxon": wilcoxon_results,
         "deseq2_100": deseq2_results_100,
         "edgeR_100": edgeR_results_100,
-        #"deseq2_200": deseq2_results_200,
-        #"edgeR_200": edgeR_results_200,
     }
 
 
 def main(dataset_path):
-    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and ("schiebinger_with_replicates" in f))]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("h5ad") and ("norman_" in f))]
     files = [os.path.join(dataset_path, f) for f in names]
     print("processing")
     print(files, flush=True)
@@ -165,28 +142,7 @@ def main(dataset_path):
             print(f"Processing {p}", file=sys.stderr)
             
         adata = ad.read_h5ad(f)
-        if "mcfarland" in f:
-            group_by = "pert_time"
-            reference = "control"
-            
-        elif "norman" in f:
-            group_by = "n_guides"
-            reference = "control"
-            
-        elif "sciplex" in f:
-            group_by = "dose_value"
-            reference = "0.0"
-            
-        elif "schiebinger" in f:
-            group_by = "perturbation"
-            reference = "control"
-            
-        elif "bhatta" in f:
-            group_by = "label"
-            reference = "Maintenance_Cocaine"
-            
-        else:
-            raise ValueError("Unknown dataset")
+        group_by, reference = get_config(f)
         
         adata = ad.read_h5ad(f)
         adata.obs[group_by] = adata.obs[group_by].astype(str)

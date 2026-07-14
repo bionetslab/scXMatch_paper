@@ -102,11 +102,11 @@ def main(raw_dataset_path, processed_dataset_path):
             group_by = "stim"
             reference = 0
                 
-        elif "norman" in f:
+        elif "norman_" in f:
             datasets = dict()
-            group_by = "stim"
+            group_by = "label"
             reference = 0
-            subset = adata[adata.obs['stim'].isin([0, 1, 2])].copy()
+            subset = adata[adata.obs[group_by].isin([0, 1, 2])].copy()
             subset.X = subset.layers['counts'].astype(np.int32)
             subset.X = csr_matrix(subset.X)
             datasets[0] = subset
@@ -154,7 +154,7 @@ def main(raw_dataset_path, processed_dataset_path):
             if "schiebinger" in name:
                 processed_p = os.path.join(processed_dataset_path, f"processed_schiebinger_with_replicates.hdf5")
             if "norman" in name:
-                processed_p = os.path.join(processed_dataset_path, f"processed_{basen.split('.')[0]}.hdf5")
+                processed_p = os.path.join(processed_dataset_path, f"processed_{basen.split('.')[0]}.h5ad")
             if "mcfarland" in name:
                 processed_p = os.path.join(processed_dataset_path, f"processed_{basen.split('.')[0]}_{i+1}.hdf5")
             if "bhatta" in name:
@@ -170,7 +170,7 @@ def main(raw_dataset_path, processed_dataset_path):
                 subset.obs[["split_50", "split_10", "split_30"]] = processed_adata.obs.loc[subset.obs_names, ["split_50", "split_10", "split_30"]]
                 for group_by_split in ["split_50", "split_10", "split_30"]:
                     subset.obs[group_by_split] = subset.obs[group_by_split].astype(float)
-                    memento_log_df = get_memento_log_with_replicate_col(subset, treatment_col=group_by_split, reference=0)    
+                    memento_log_df = get_memento_log(subset, treatment_col=group_by_split, reference=0)    
                     memento_log_df["testgroup"] = test_group
                     memento_log_df["group_by"] = group_by_split
                     memento_log_df["len_subset"] = len(subset)

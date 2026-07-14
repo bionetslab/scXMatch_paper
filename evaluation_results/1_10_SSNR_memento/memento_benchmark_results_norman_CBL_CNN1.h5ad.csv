@@ -1,0 +1,7 @@
+,test_group,reference,#DEGs,time,testgroup,group_by,len_subset,dataset
+0,1.0,0,498,82.98595070838928,1,split_50,2882,processed_norman_CBL_CNN1
+0,1.0,0,316,60.438740491867065,1,split_10,2882,processed_norman_CBL_CNN1
+0,1.0,0,387,72.48023271560669,1,split_30,2882,processed_norman_CBL_CNN1
+0,1.0,0,239,25.66528558731079,2,split_50,348,processed_norman_CBL_CNN1
+0,1.0,0,129,17.18872594833374,2,split_10,348,processed_norman_CBL_CNN1
+0,1.0,0,252,24.04078197479248,2,split_30,348,processed_norman_CBL_CNN1

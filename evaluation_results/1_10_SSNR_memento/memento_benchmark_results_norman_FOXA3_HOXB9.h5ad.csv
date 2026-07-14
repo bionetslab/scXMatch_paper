@@ -1,0 +1,7 @@
+,test_group,reference,#DEGs,time,testgroup,group_by,len_subset,dataset
+0,1.0,0,381,50.37847018241882,1,split_50,1289,processed_norman_FOXA3_HOXB9
+0,1.0,0,234,37.150856256484985,1,split_10,1289,processed_norman_FOXA3_HOXB9
+0,1.0,0,359,47.34494733810425,1,split_30,1289,processed_norman_FOXA3_HOXB9
+0,1.0,0,214,21.92384171485901,2,split_50,329,processed_norman_FOXA3_HOXB9
+0,1.0,0,106,16.244038343429565,2,split_10,329,processed_norman_FOXA3_HOXB9
+0,1.0,0,253,20.82288694381714,2,split_30,329,processed_norman_FOXA3_HOXB9

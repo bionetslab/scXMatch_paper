@@ -95,7 +95,7 @@ def assign_pseudo_bulks_and_splits(adata, group_by):
 
 
 def pre_process_all(dataset_path):
-    names = [f for f in os.listdir(dataset_path) if (f.endswith("hdf5") and "schiebinger" in f)]
+    names = [f for f in os.listdir(dataset_path) if (f.endswith("h5ad") and "norman_" in f)]
     files = [os.path.join(dataset_path, f) for f in names]
     
     print(names)
@@ -131,11 +131,7 @@ def pre_process_all(dataset_path):
                     index += 1
             
         elif "norman" in n:
-            group_by = "n_guides"
-            adata.obs['n_guides'] = np.where(
-            adata.obs["perturbation"].str.contains("control"),
-                                "control",  # If true, assign "control"
-                                adata.obs["perturbation"].str.count("\+") + 1)    
+            group_by = "label"
         elif "sciplex" in n:
             group_by = "dose_value"
         elif "schiebinger" in n:
@@ -147,7 +143,8 @@ def pre_process_all(dataset_path):
         
         adata = scanpy_setup(adata)
         adata = assign_pseudo_bulks_and_splits(adata, group_by)
-        adata.write_h5ad("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/processed_schiebinger_with_replicates.hdf5")
+        processed_path = os.path.join(dataset_path, f"processed_{n}")
+        adata.write_h5ad(processed_path)
     
 if __name__ == "__main__":
     pre_process_all("/home/woody/iwbn/iwbn007h/data/scrnaseq_ji/raw")
