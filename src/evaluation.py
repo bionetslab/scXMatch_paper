@@ -82,10 +82,11 @@ def get_mon_df(xm_results = "../evaluation_results/1_1_monotonicity_scxmatch/",
 
         else:
             bm_result_dfs[dataset] = bm_result_dfs[dataset].sort_index()
-        mon[dataset] = bm_result_dfs[dataset].apply(monotonicity, axis=0)
+        
+        mon[dataset] = bm_result_dfs[dataset].dropna(axis=1).apply(monotonicity, axis=0)
 
     mon_df = pd.DataFrame(mon)
-    mon_df.drop(["deseq2_500", "edgeR_500", "deseq2_200", "edgeR_200"], axis=0, inplace=True)
+    mon_df.drop(["deseq2_500", "edgeR_500", "deseq2_200", "edgeR_200"], axis=0, inplace=True, errors="ignore")
     melted_mon = pd.melt(mon_df.reset_index().rename({"index": "metric"}, axis=1), id_vars="metric", var_name="dataset")    
     return bm_result_dfs, mon_df, melted_mon
 
@@ -179,9 +180,8 @@ def get_sv_df(monotonicity_result_df,
                           unbalanced_edist_var[dataset]
                           ], axis=1)
         all_var[dataset] = conc
-    
-    var_res_all = pd.concat(all_var)#.dropna(axis=1)
 
+    var_res_all = pd.concat(all_var)#.dropna(axis=1)
     var_dict = dict()
     
     for dataset in xm_results_dfs_var:

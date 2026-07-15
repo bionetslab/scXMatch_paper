@@ -22,12 +22,6 @@ bhattacherjee_testgroups = {
     1: "withdraw_48h_Cocaine",
     2: "withdraw_15d_Cocaine"}
 
-number_of_genes_in_raw_data = {
-    "norman": 19018,
-     "schiebinger": 27998,
-     "mcfarland": 32738,
-     "bhattacherjee": 18469}
-
 # -------- Functions to read in monotonicity results for different metrics --------
 def read_memento_monotonicity(mem_results):
     memento_results = {f.split("memento_benchmark_results_")[1].split(".")[0]: pd.read_csv(os.path.join(mem_results, f), index_col=0).set_index("test_group")[["#DEGs"]] for f in os.listdir(mem_results) if (f.endswith("csv") and not f.startswith("with_cov"))}
