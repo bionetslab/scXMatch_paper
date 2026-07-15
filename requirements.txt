@@ -1,0 +1,18 @@
+anndata
+gseapy
+jupyterlab
+matplotlib
+memento
+networkx
+numpy
+pandas
+pertpy
+scanpy
+scikit-learn
+scipy
+seaborn
+statsmodels
+tqdm
+
+# scxmatch is not on PyPI — install from source:
+# pip install git+https://github.com/bionetslab/scxmatch.git
