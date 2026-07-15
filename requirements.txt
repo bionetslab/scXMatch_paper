@@ -14,5 +14,4 @@ seaborn
 statsmodels
 tqdm
 
-# scxmatch is not on PyPI — install from source:
-# pip install git+https://github.com/bionetslab/scxmatch.git
+# scxmatch is not on PyPI — install from bioconda
